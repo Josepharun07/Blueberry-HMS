@@ -36,7 +36,7 @@ docker-compose up -d
 
 # Start all apps
 pnpm dev
-
+```
 ## 🎯 Phase 1: COMPLETE ✅
 
 ### Infrastructure
