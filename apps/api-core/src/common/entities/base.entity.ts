@@ -1,4 +1,3 @@
-cat > src/common/entities/base.entity.ts << 'EOF'
 import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
@@ -6,13 +5,6 @@ import {
   DeleteDateColumn,
 } from 'typeorm';
 
-/**
- * Base Entity for all database models
- * Provides: UUID primary key, timestamps, soft delete
- * 
- * All entities in Blueberry HMS extend this class
- * to ensure consistent data tracking and audit capability
- */
 export abstract class BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -26,4 +18,3 @@ export abstract class BaseEntity {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt: Date | null;
 }
-EOF

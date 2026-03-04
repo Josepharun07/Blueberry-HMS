@@ -10,8 +10,14 @@ export const getDatabaseConfig = (
   username: configService.get('DB_USER'),
   password: configService.get('DB_PASSWORD'),
   database: configService.get('DB_NAME'),
+  
+  // IMPORTANT: This scans ALL entity files
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+  
   synchronize: configService.get('NODE_ENV') === 'development',
   logging: configService.get('NODE_ENV') === 'development',
   ssl: false,
+  
+  // Enable auto-loading of entities
+  autoLoadEntities: true,
 });
