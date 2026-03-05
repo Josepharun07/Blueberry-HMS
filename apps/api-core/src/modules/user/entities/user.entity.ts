@@ -1,4 +1,5 @@
 import { Entity, Column, Index } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { UserRole } from '../../../common/enums/user-role.enum';
 import { UserStatus } from '../../../common/enums/user-status.enum';
@@ -20,6 +21,15 @@ export class User extends BaseEntity {
     unique: true
   })
   email: string;
+
+  @Column({ 
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    select: false  // Don't select by default
+  })
+  @Exclude()  // Exclude from class-transformer serialization
+  password: string | null;
 
   @Column({ 
     name: 'first_name', 
@@ -87,7 +97,6 @@ export class User extends BaseEntity {
   })
   lastLoginIp: string | null;
 
-  // Virtual getter - not stored in DB
   get fullName(): string {
     return `${this.firstName} ${this.lastName}`;
   }

@@ -1,5 +1,5 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -19,6 +19,14 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
 
+  // Global serialization (respects @Exclude decorators)
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector), {
+      excludeExtraneousValues: false,
+      exposeUnsetFields: false,
+    }),
+  );
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -37,6 +45,7 @@ async function bootstrap() {
     .setDescription('Hotel Management Suite for Blueberry Hills Resort, Munnar')
     .setVersion('1.0')
     .addBearerAuth()
+    .addTag('Authentication')
     .addTag('Property Management')
     .addTag('User Management')
     .addTag('Audit Logs')
@@ -50,7 +59,7 @@ async function bootstrap() {
   console.log(`🚀 Blueberry HMS API running on: http://localhost:${port}`);
   console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
   console.log(`🏨 Property: Blueberry Hills Resort, Munnar`);
-  console.log(`🔒 Phase 2: Core Security & Audit Logging Active`);
+  console.log(`🔒 Phase 2: Authentication & Authorization Active`);
 }
 
 bootstrap();

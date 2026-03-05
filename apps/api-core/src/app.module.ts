@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { PropertyModule } from './modules/property/property.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
 
 @Module({
@@ -24,6 +25,7 @@ import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor
     AuditModule,
     PropertyModule,
     UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

@@ -14,11 +14,10 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    // Check if email already exists
+  async create(createUserDto: CreateUserDto & { password?: string }): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: { email: createUserDto.email },
-      withDeleted: true, // Check even soft-deleted users
+      withDeleted: true,
     });
 
     if (existingUser && !existingUser.deletedAt) {
@@ -51,13 +50,32 @@ export class UserService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return await this.userRepository.findOne({ where: { email } });
+    return await this.userRepository.findOne({ 
+      where: { email },
+      select: [
+        'id', 
+        'email', 
+        'password', 
+        'firstName', 
+        'lastName', 
+        'role', 
+        'status',
+        'keycloakId',
+        'phoneNumber',
+        'profilePicture',
+        'preferences',
+        'lastLoginAt',
+        'lastLoginIp',
+        'createdAt',
+        'updatedAt',
+        'deletedAt'
+      ]
+    });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
     
-    // Prevent email changes if already in use
     if (updateUserDto.email && updateUserDto.email !== user.email) {
       const existingUser = await this.findByEmail(updateUserDto.email);
       if (existingUser) {
