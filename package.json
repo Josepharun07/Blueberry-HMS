@@ -4,19 +4,19 @@
   "private": true,
   "description": "Blueberry Hotel Management Suite",
   "scripts": {
-    "dev": "turbo run dev --parallel",
-    "dev:api": "pnpm --filter @blueberry/api-core run start:dev",
-    "build": "turbo run build",
-    "start": "turbo run start",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "clean": "turbo run clean && rm -rf node_modules",
+    "dev": "concurrently -n \"API,ADMIN\" -c \"blue,green\" \"pnpm run dev:api\" \"pnpm run dev:admin\"",
+    "dev:api": "pnpm --filter @blueberry/api-core run dev",
+    "dev:admin": "pnpm --filter admin-panel run dev",
+    "build": "pnpm --filter @blueberry/api-core run build && pnpm --filter admin-panel run build",
+    "start": "pnpm --filter @blueberry/api-core run start:prod",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:logs": "docker-compose logs -f",
+    "docker:restart": "docker-compose restart",
+    "clean": "rm -rf node_modules apps/*/node_modules apps/*/dist"
   },
   "devDependencies": {
-    "turbo": "^1.11.0"
+    "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=18.0.0",

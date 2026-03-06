@@ -177,3 +177,47 @@ graph TD
 ---
 
 **Developed for Mattel Group by Technical Team.**
+
+
+
+---
+
+### **Development:**
+```bash
+pnpm run dev           # Start both API and Admin
+pnpm run dev:api       # Start only API
+pnpm run dev:admin     # Start only Admin Panel
+pnpm run dev:full      # Start Docker + both apps
+```
+
+### **Docker:**
+```bash
+pnpm run docker:up      # Start database, Redis, etc.
+pnpm run docker:down    # Stop all services
+pnpm run docker:logs    # View logs
+pnpm run docker:restart # Restart services
+pnpm run docker:clean   # Remove all data (careful!)
+```
+
+### **Database:**
+```bash
+pnpm run db:backup     # Backup database to file
+```
+
+### **Production:**
+```bash
+pnpm run build         # Build both projects
+pnpm run start         # Start production API
+```
+
+---
+
+
+```bash
+# Start everything with one command
+pnpm run dev
+```
+
+**You should see both services start with colored output!**
+
+---
