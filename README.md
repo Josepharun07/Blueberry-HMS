@@ -1,10 +1,8 @@
 
 # 🏨 Blueberry HMS (Hotel Management Suite)
 
-**Version:** 1.0.0 (Phase 4 Complete)  
-**Property:** Blueberry Hills Resort, Munnar (Mattel Group)  
-**Domain:** blueberryhillsmunnar.in  
-**Status:** 🟢 Core Revenue System Active
+**Version:** 1.0.0 (Phase 4 Complete)   
+
 
 ---
 
