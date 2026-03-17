@@ -1,5 +1,6 @@
 import { DataSourceOptions } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 export const getTypeOrmConfig = (configService: ConfigService): DataSourceOptions => {
   return {
@@ -10,8 +11,9 @@ export const getTypeOrmConfig = (configService: ConfigService): DataSourceOption
     password: configService.get<string>('DB_PASSWORD'),
     database: configService.get<string>('DB_NAME'),
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: false, // ✅ DISABLED - Data will persist!
+    synchronize: true,
     logging: ['error', 'warn'],
     dropSchema: false,
+    namingStrategy: new SnakeNamingStrategy(),
   };
 };
