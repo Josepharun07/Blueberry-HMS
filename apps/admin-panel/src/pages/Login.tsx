@@ -18,25 +18,32 @@ export function Login() {
     
     logger.info('Login attempt', 'Login', { email });
 
-    // TEST MODE: Allow demo login
-    if (email === 'admin@blueberryhillsmunnar.in' && password === 'Admin@123') {
-      const testUser = {
-        id: 'test-user-1',
-        email: 'admin@blueberryhillsmunnar.in',
-        firstName: 'Admin',
-        lastName: 'User',
-        role: 'ADMIN',
-      };
-      
-      login('test-token-123', testUser);
-      logger.info('Test login successful', 'Login');
-      navigate('/');
-      return;
-    }
+    try {
+      // REAL API CALL
+      const response = await fetch('http://localhost:4000/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    setError('Invalid credentials. Use: admin@blueberryhillsmunnar.in / Admin@123');
-    logger.error('Login failed', new Error('Invalid credentials'), 'Login');
-    setLoading(false);
+      if (!response.ok) {
+        throw new Error('Invalid credentials');
+      }
+
+      const data = await response.json();
+      
+      // USE REAL TOKEN FROM API RESPONSE
+      login(data.access_token, data.user);
+      
+      logger.info('Login successful', 'Login');
+      navigate('/');
+    } catch (err: any) {
+      const errorMsg = err.message || 'Login failed';
+      setError(errorMsg);
+      logger.error('Login failed', err, 'Login');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,7 +58,7 @@ export function Login() {
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-blue-800 font-medium">🧪 Test Login:</p>
+          <p className="text-sm text-blue-800 font-medium">🔑 Login Credentials:</p>
           <p className="text-sm text-blue-700 mt-1 font-mono">
             admin@blueberryhillsmunnar.in<br/>
             Admin@123

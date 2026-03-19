@@ -27,7 +27,7 @@ export const bookingsApi = {
 
   getById: async (id: string) => {
     const response = await axios.get<Booking>(
-      getApiUrl(`/bookings/${id}`),  // ✅ FIXED
+      getApiUrl(`/bookings/${id}`),
       { headers: getAuthHeader() }
     );
     return response.data;
@@ -44,7 +44,7 @@ export const bookingsApi = {
 
   checkIn: async (id: string) => {
     const response = await axios.post<Booking>(
-      getApiUrl(`/bookings/${id}/check-in`),  // ✅ FIXED
+      getApiUrl(`/bookings/${id}/check-in`),
       {},
       { headers: getAuthHeader() }
     );
@@ -53,7 +53,7 @@ export const bookingsApi = {
 
   checkOut: async (id: string) => {
     const response = await axios.post<Booking>(
-      getApiUrl(`/bookings/${id}/check-out`),  // ✅ FIXED
+      getApiUrl(`/bookings/${id}/check-out`),
       {},
       { headers: getAuthHeader() }
     );
@@ -62,7 +62,7 @@ export const bookingsApi = {
 
   cancel: async (id: string) => {
     const response = await axios.post<Booking>(
-      getApiUrl(`/bookings/${id}/cancel`),  // ✅ FIXED
+      getApiUrl(`/bookings/${id}/cancel`),
       {},
       { headers: getAuthHeader() }
     );

@@ -2,9 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { Bookings } from './pages/Bookings';
 import { useAuthStore } from './lib/store/authStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { logger } from './lib/logging/logger';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,8 +21,6 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  logger.info('App started', 'App');
-
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -34,6 +32,14 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/bookings"
+              element={
+                <PrivateRoute>
+                  <Bookings />
                 </PrivateRoute>
               }
             />
