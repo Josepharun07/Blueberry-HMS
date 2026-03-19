@@ -32,17 +32,17 @@ export class Booking {
   id: string;
 
   @ManyToOne(() => Guest, { eager: true })
-  @JoinColumn({ name: 'guestId' })
+  @JoinColumn({ name: 'guest_id' })
   guest: Guest;
 
-  @Column()
+  @Column({ name: 'guest_id' })
   guestId: string;
 
   @ManyToOne(() => Room, { eager: true })
-  @JoinColumn({ name: 'roomId' })
+  @JoinColumn({ name: 'room_id' })
   room: Room;
 
-  @Column()
+  @Column({ name: 'room_id' })
   roomId: string;
 
   @Column({ nullable: true })

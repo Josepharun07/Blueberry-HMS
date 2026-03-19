@@ -11,8 +11,8 @@ export const getTypeOrmConfig = (configService: ConfigService): DataSourceOption
     password: configService.get<string>('DB_PASSWORD'),
     database: configService.get<string>('DB_NAME'),
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: true,
-    logging: ['error', 'warn'],
+    synchronize: true, // ✅ ENABLED
+    logging: false,
     dropSchema: false,
     namingStrategy: new SnakeNamingStrategy(),
   };
