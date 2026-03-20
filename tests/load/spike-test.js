@@ -1,7 +1,7 @@
 import http from 'k6/http';
 import { check } from 'k6';
 
-const BASE_URL = __ENV.API_URL || 'http://localhost:4000/api/v1';
+const BASE_URL = __ENV.API_URL;
 
 export const options = {
   stages: [

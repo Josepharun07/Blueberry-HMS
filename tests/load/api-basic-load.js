@@ -3,7 +3,7 @@ import { check, sleep } from 'k6';
 import { Rate } from 'k6/metrics';
 
 const errorRate = new Rate('errors');
-const BASE_URL = __ENV.API_URL || 'http://localhost:4000/api/v1';
+const BASE_URL = __ENV.API_URL; // || 'http://localhost:4000/api/v1';
 
 export const options = {
   stages: [

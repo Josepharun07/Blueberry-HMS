@@ -1,9 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../lib/store/authStore';
 import type { Booking } from '../types/booking.types';
+import { bookingActions } from '../lib/api/bookings';
+import { useState } from 'react';
 
 export function Bookings() {
   const token = useAuthStore((s) => s.token);
+  const queryClient = useQueryClient();
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const { data: bookings, isLoading, error } = useQuery({
     queryKey: ['bookings'],
@@ -15,6 +19,44 @@ export function Bookings() {
       return response.json() as Promise<Booking[]>;
     },
   });
+
+  const checkInMutation = useMutation({
+    mutationFn: bookingActions.checkIn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      setActionLoading(null);
+    },
+    onError: (error: Error) => {
+      alert(`Check-in failed: ${error.message}`);
+      setActionLoading(null);
+    },
+  });
+
+  const checkOutMutation = useMutation({
+    mutationFn: bookingActions.checkOut,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      setActionLoading(null);
+    },
+    onError: (error: Error) => {
+      alert(`Check-out failed: ${error.message}`);
+      setActionLoading(null);
+    },
+  });
+
+  const handleCheckIn = (id: string) => {
+    if (confirm('Check in this guest?')) {
+      setActionLoading(id);
+      checkInMutation.mutate(id);
+    }
+  };
+
+  const handleCheckOut = (id: string) => {
+    if (confirm('Check out this guest? This will finalize the booking.')) {
+      setActionLoading(id);
+      checkOutMutation.mutate(id);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const colors = {
@@ -138,20 +180,28 @@ export function Bookings() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   ₹{booking.totalAmount}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button className="text-primary-600 hover:text-primary-900 mr-3">
-                    View
-                  </button>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                   {booking.status === 'CONFIRMED' && (
-                    <button className="text-green-600 hover:text-green-900">
-                      Check In
+                    <button 
+                      onClick={() => handleCheckIn(booking.id)}
+                      disabled={actionLoading === booking.id}
+                      className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                    >
+                      {actionLoading === booking.id ? 'Processing...' : 'Check In'}
                     </button>
                   )}
                   {booking.status === 'CHECKED_IN' && (
-                    <button className="text-blue-600 hover:text-blue-900">
-                      Check Out
+                    <button 
+                      onClick={() => handleCheckOut(booking.id)}
+                      disabled={actionLoading === booking.id}
+                      className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                    >
+                      {actionLoading === booking.id ? 'Processing...' : 'Check Out'}
                     </button>
                   )}
+                  <button className="text-gray-600 hover:text-gray-900">
+                    View
+                  </button>
                 </td>
               </tr>
             ))}

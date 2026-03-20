@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getApiUrl } from './config';
-import { Booking, CreateBookingDto } from '../../types/booking.types';
+import type { Booking, CreateBookingDto } from '../../types/booking.types';
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('auth-storage');
@@ -19,7 +19,7 @@ const getAuthHeader = () => {
 export const bookingsApi = {
   getAll: async () => {
     const response = await axios.get<Booking[]>(
-      getApiUrl('/bookings'),
+      getApiUrl('/api/v1/bookings'),
       { headers: getAuthHeader() }
     );
     return response.data;
@@ -27,7 +27,7 @@ export const bookingsApi = {
 
   getById: async (id: string) => {
     const response = await axios.get<Booking>(
-      getApiUrl(`/bookings/${id}`),  // ✅ FIXED
+      getApiUrl(`/api/v1/bookings/${id}`),
       { headers: getAuthHeader() }
     );
     return response.data;
@@ -35,7 +35,7 @@ export const bookingsApi = {
 
   create: async (data: CreateBookingDto) => {
     const response = await axios.post<Booking>(
-      getApiUrl('/bookings'),
+      getApiUrl('/api/v1/bookings'),
       data,
       { headers: getAuthHeader() }
     );
@@ -44,7 +44,7 @@ export const bookingsApi = {
 
   checkIn: async (id: string) => {
     const response = await axios.post<Booking>(
-      getApiUrl(`/bookings/${id}/check-in`),  // ✅ FIXED
+      getApiUrl(`/api/v1/bookings/${id}/check-in`),
       {},
       { headers: getAuthHeader() }
     );
@@ -53,7 +53,7 @@ export const bookingsApi = {
 
   checkOut: async (id: string) => {
     const response = await axios.post<Booking>(
-      getApiUrl(`/bookings/${id}/check-out`),  // ✅ FIXED
+      getApiUrl(`/api/v1/bookings/${id}/check-out`),
       {},
       { headers: getAuthHeader() }
     );
@@ -62,10 +62,16 @@ export const bookingsApi = {
 
   cancel: async (id: string) => {
     const response = await axios.post<Booking>(
-      getApiUrl(`/bookings/${id}/cancel`),  // ✅ FIXED
+      getApiUrl(`/api/v1/bookings/${id}/cancel`),
       {},
       { headers: getAuthHeader() }
     );
     return response.data;
   },
+};
+
+export const bookingActions = {
+  checkIn: bookingsApi.checkIn,
+  checkOut: bookingsApi.checkOut,
+  cancel: bookingsApi.cancel,
 };
