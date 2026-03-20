@@ -173,7 +173,6 @@ export class BookingsService {
     return updated;
   }
 
-
   async recordPayment(
     bookingId: string,
     createPaymentDto: CreatePaymentDto,
@@ -199,14 +198,20 @@ export class BookingsService {
     console.log('DEBUG - createPaymentDto:', createPaymentDto);
     console.log('DEBUG - userId:', userId);
 
-    const payment = new Payment();
-    payment.amount = createPaymentDto.amount;
-    payment.paymentMethod = createPaymentDto.paymentMethod;
-    payment.reference = createPaymentDto.reference || undefined;
-    payment.notes = createPaymentDto.notes || undefined;
-    payment.recordedBy = userId;
+    const paymentData = {
+      bookingId: bookingId,
+      amount: createPaymentDto.amount,
+      paymentMethod: createPaymentDto.paymentMethod,
+      reference: createPaymentDto.reference || null,
+      notes: createPaymentDto.notes || null,
+      recordedBy: userId,
+    };
 
-    console.log('DEBUG - payment entity before save:', payment);
+    console.log('DEBUG - paymentData to save:', paymentData);
+
+    const payment = this.paymentRepository.create(paymentData);
+
+    console.log('DEBUG - payment entity after create:', payment);
 
     const savedPayment = await this.paymentRepository.save(payment);
 
@@ -235,7 +240,7 @@ export class BookingsService {
   async getPayments(bookingId: string): Promise<Payment[]> {
     const booking = await this.findOne(bookingId);
     return this.paymentRepository.find({
-      where: { booking: { id: booking.id } },
+      where: { bookingId: booking.id },
       order: { createdAt: 'DESC' },
     });
   }

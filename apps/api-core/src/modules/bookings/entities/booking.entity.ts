@@ -5,10 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { Guest } from '../../guests/entities/guest.entity';
 import { Room } from '../../rooms/entities/room.entity';
+import { Payment } from './payment.entity';
 
 export enum BookingStatus {
   PENDING = 'PENDING',
@@ -44,6 +46,9 @@ export class Booking {
 
   @Column({ name: 'room_id' })
   roomId: string;
+
+  @OneToMany(() => Payment, payment => payment.booking)
+  payments: Payment[];
 
   @Column({ nullable: true })
   createdBy: string;

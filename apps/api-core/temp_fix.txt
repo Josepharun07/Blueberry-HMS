@@ -1,0 +1,63 @@
+  async recordPayment(
+    bookingId: string,
+    createPaymentDto: CreatePaymentDto,
+    userId: string,
+  ): Promise<Payment> {
+    const booking = await this.findOne(bookingId);
+
+    if (booking.status === BookingStatus.CANCELLED) {
+      throw new BadRequestException('Cannot record payment for cancelled booking');
+    }
+
+    const currentPaid = parseFloat(booking.paidAmount.toString());
+    const totalAmount = parseFloat(booking.totalAmount.toString());
+    const paymentAmount = createPaymentDto.amount;
+
+    if (currentPaid + paymentAmount > totalAmount) {
+      throw new BadRequestException(
+        `Payment amount exceeds balance due. Balance: ${totalAmount - currentPaid}`,
+      );
+    }
+
+    console.log('DEBUG - bookingId:', bookingId);
+    console.log('DEBUG - createPaymentDto:', createPaymentDto);
+    console.log('DEBUG - userId:', userId);
+
+    const paymentData = {
+      bookingId: bookingId,
+      amount: createPaymentDto.amount,
+      paymentMethod: createPaymentDto.paymentMethod,
+      reference: createPaymentDto.reference,
+      notes: createPaymentDto.notes,
+      recordedBy: userId,
+    };
+
+    console.log('DEBUG - paymentData to save:', paymentData);
+
+    const payment = this.paymentRepository.create(paymentData);
+
+    console.log('DEBUG - payment entity after create:', payment);
+
+    const savedPayment = await this.paymentRepository.save(payment);
+
+    booking.paidAmount = currentPaid + paymentAmount;
+
+    if (booking.paidAmount >= totalAmount) {
+      booking.paymentStatus = PaymentStatus.PAID;
+    } else if (booking.paidAmount > 0) {
+      booking.paymentStatus = PaymentStatus.PARTIAL;
+    }
+
+    await this.bookingRepository.save(booking);
+
+    this.logger.audit('PAYMENT_RECORDED', userId, {
+      bookingId,
+      paymentId: savedPayment.id,
+      amount: paymentAmount,
+      method: createPaymentDto.paymentMethod,
+      newPaidAmount: booking.paidAmount,
+      paymentStatus: booking.paymentStatus,
+    });
+
+    return savedPayment;
+  }

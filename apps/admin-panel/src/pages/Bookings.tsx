@@ -4,13 +4,15 @@ import { useAuthStore } from '../lib/store/authStore';
 import type { Booking } from '../types/booking.types';
 import { bookingActions } from '../lib/api/bookings';
 import { BookingDetailsModal } from '../components/bookings/BookingDetailsModal';
+import { PaymentModal } from '../components/bookings/PaymentModal';
 
 export function Bookings() {
   const token = useAuthStore((s) => s.token);
   const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const { data: bookings, isLoading, error } = useQuery({
     queryKey: ['bookings'],
@@ -47,6 +49,18 @@ export function Bookings() {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: bookingActions.cancel,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      setActionLoading(null);
+    },
+    onError: (error: Error) => {
+      alert(`Cancellation failed: ${error.message}`);
+      setActionLoading(null);
+    },
+  });
+
   const handleCheckIn = (id: string) => {
     if (confirm('Check in this guest?')) {
       setActionLoading(id);
@@ -61,9 +75,25 @@ export function Bookings() {
     }
   };
 
+  const handleCancel = (id: string, confirmationNumber: string) => {
+    if (confirm(`Cancel booking ${confirmationNumber}? This action cannot be undone.`)) {
+      setActionLoading(id);
+      cancelMutation.mutate(id);
+    }
+  };
+
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
-    setIsModalOpen(true);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleRecordPayment = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentRecorded = () => {
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
   };
 
   const getStatusBadge = (status: string) => {
@@ -188,31 +218,54 @@ export function Bookings() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   ₹{booking.totalAmount}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                  <button 
-                    onClick={() => handleViewDetails(booking)}
-                    className="text-primary-600 hover:text-primary-900"
-                  >
-                    View
-                  </button>
-                  {booking.status === 'CONFIRMED' && (
-                    <button 
-                      onClick={() => handleCheckIn(booking.id)}
-                      disabled={actionLoading === booking.id}
-                      className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                    >
-                      {actionLoading === booking.id ? 'Processing...' : 'Check In'}
-                    </button>
-                  )}
-                  {booking.status === 'CHECKED_IN' && (
-                    <button 
-                      onClick={() => handleCheckOut(booking.id)}
-                      disabled={actionLoading === booking.id}
-                      className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
-                    >
-                      {actionLoading === booking.id ? 'Processing...' : 'Check Out'}
-                    </button>
-                  )}
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex flex-col gap-1 items-end">
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleViewDetails(booking)}
+                        className="text-primary-600 hover:text-primary-900"
+                      >
+                        View
+                      </button>
+                      {booking.paymentStatus !== 'PAID' && booking.status !== 'CANCELLED' && (
+                        <button 
+                          onClick={() => handleRecordPayment(booking)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Payment
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {booking.status === 'CONFIRMED' && (
+                        <button 
+                          onClick={() => handleCheckIn(booking.id)}
+                          disabled={actionLoading === booking.id}
+                          className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                        >
+                          {actionLoading === booking.id ? 'Processing...' : 'Check In'}
+                        </button>
+                      )}
+                      {booking.status === 'CHECKED_IN' && (
+                        <button 
+                          onClick={() => handleCheckOut(booking.id)}
+                          disabled={actionLoading === booking.id}
+                          className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                        >
+                          {actionLoading === booking.id ? 'Processing...' : 'Check Out'}
+                        </button>
+                      )}
+                      {(booking.status === 'CONFIRMED' || booking.status === 'CHECKED_IN') && (
+                        <button 
+                          onClick={() => handleCancel(booking.id, booking.confirmationNumber)}
+                          disabled={actionLoading === booking.id}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        >
+                          {actionLoading === booking.id ? 'Processing...' : 'Cancel'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -228,8 +281,15 @@ export function Bookings() {
 
       <BookingDetailsModal
         booking={selectedBooking}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
+
+      <PaymentModal
+        booking={selectedBooking}
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onPaymentRecorded={handlePaymentRecorded}
       />
     </div>
   );

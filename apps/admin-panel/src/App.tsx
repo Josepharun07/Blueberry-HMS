@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Bookings } from './pages/Bookings';
+import { Rooms } from './pages/Rooms';
 import { Layout } from './components/layout/Layout';
 import { useAuthStore } from './lib/store/authStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -37,6 +38,7 @@ export default function App() {
             >
               <Route path="/" element={<Dashboard />} />
               <Route path="/bookings" element={<Bookings />} />
+              <Route path="/rooms" element={<Rooms />} />
             </Route>
           </Routes>
         </BrowserRouter>
