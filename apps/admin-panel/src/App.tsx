@@ -7,6 +7,7 @@ import { Rooms } from './pages/Rooms';
 import { Layout } from './components/layout/Layout';
 import { useAuthStore } from './lib/store/authStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import CreateBooking from './pages/bookings/CreateBooking';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/bookings" element={<Bookings />} />
               <Route path="/rooms" element={<Rooms />} />
+              <Route path="/bookings/create" element={<CreateBooking />} />
             </Route>
           </Routes>
         </BrowserRouter>

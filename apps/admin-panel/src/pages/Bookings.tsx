@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../lib/store/authStore';
 import type { Booking } from '../types/booking.types';
@@ -7,8 +8,10 @@ import { BookingDetailsModal } from '../components/bookings/BookingDetailsModal'
 import { PaymentModal } from '../components/bookings/PaymentModal';
 
 export function Bookings() {
+  const navigate = useNavigate();
   const token = useAuthStore((s) => s.token);
   const queryClient = useQueryClient();
+  
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -142,13 +145,36 @@ export function Bookings() {
 
   return (
     <div className="p-8">
+      {/* Header with New Booking Button */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Bookings</h1>
-        <button className="btn btn-primary">
-          + New Booking
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Bookings</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage reservations and guest check-ins
+          </p>
+        </div>
+        <button 
+          onClick={() => navigate('/bookings/create')}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm transition-colors duration-150"
+        >
+          <svg 
+            className="-ml-1 mr-2 h-5 w-5" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M12 4v16m8-8H4" 
+            />
+          </svg>
+          New Booking
         </button>
       </div>
 
+      {/* Bookings Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -273,12 +299,51 @@ export function Bookings() {
         </table>
       </div>
 
+      {/* Empty State */}
       {bookings?.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          No bookings found. Create your first booking to get started.
+        <div className="text-center py-12">
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No bookings</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Get started by creating a new booking.
+          </p>
+          <div className="mt-6">
+            <button
+              onClick={() => navigate('/bookings/create')}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <svg
+                className="-ml-1 mr-2 h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Booking
+            </button>
+          </div>
         </div>
       )}
 
+      {/* Modals */}
       <BookingDetailsModal
         booking={selectedBooking}
         isOpen={isDetailsModalOpen}
