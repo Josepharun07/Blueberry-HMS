@@ -1,6 +1,29 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import type { Booking } from '../../types/booking.types';
+import { bookingsApi } from '../../lib/api/bookings';
+
+function decimalStringToPaise(value: string): number {
+  const raw = value.trim();
+  const negative = raw.startsWith('-');
+  const body = negative ? raw.slice(1) : raw;
+  if (!/^\d{1,10}(\.\d{1,2})?$/.test(body)) return 0;
+  const [whole, fraction = ''] = body.split('.');
+  const paise = Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
+  return negative ? -paise : paise;
+}
+
+function paiseToDecimal(paise: number): string {
+  const negative = paise < 0;
+  const absolute = Math.abs(paise);
+  const whole = Math.floor(absolute / 100);
+  const fraction = String(absolute % 100).padStart(2, '0');
+  return `${negative ? '-' : ''}${whole}.${fraction}`;
+}
+
+function balanceRupees(total: string, paid: string): string {
+  return paiseToDecimal(decimalStringToPaise(total) - decimalStringToPaise(paid));
+}
 
 interface PaymentModalProps {
   booking: Booking | null;
@@ -16,54 +39,36 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentRecorded }: Pa
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const idempotencyKey = useRef(crypto.randomUUID());
 
   if (!booking) return null;
 
-  const balanceDue = parseFloat(booking.totalAmount) - parseFloat(booking.paidAmount);
+  const balanceDue = balanceRupees(booking.totalAmount, booking.paidAmount);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const paymentAmount = parseFloat(amount);
-
-    if (isNaN(paymentAmount) || paymentAmount <= 0) {
-      setError('Please enter a valid amount');
-      setLoading(false);
-      return;
-    }
-
-    if (paymentAmount > balanceDue) {
-      setError('Payment amount cannot exceed balance due');
+    const normalized = amount.trim();
+    if (!/^\d{1,10}(\.\d{1,2})?$/.test(normalized) || normalized === '0' || normalized === '0.0' || normalized === '0.00') {
+      setError('Enter the amount in rupees, with at most 2 decimal places');
       setLoading(false);
       return;
     }
 
     try {
-      const token = localStorage.getItem('auth-storage');
-      if (!token) throw new Error('No authentication token');
-
-      const parsed = JSON.parse(token);
-      
-      const response = await fetch(`http://localhost:4000/api/v1/bookings/${booking.id}/payments`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${parsed.state.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: paymentAmount,
+      await bookingsApi.recordPayment(
+        booking.id,
+        {
+          amount: normalized,
           paymentMethod,
-          reference,
-          notes,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Payment recording failed');
-      }
+          reference: reference || undefined,
+          notes: notes || undefined,
+        },
+        idempotencyKey.current,
+      );
+      idempotencyKey.current = crypto.randomUUID();
 
       setAmount('');
       setPaymentMethod('CASH');
@@ -78,11 +83,21 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentRecorded }: Pa
     }
   };
 
-  const formatCurrency = (value: string | number) => {
-    return new Intl.NumberFormat('en-IN', {
+  const formatCurrency = (value: string) => {
+    const paise = decimalStringToPaise(value);
+    const negative = paise < 0;
+    const absolute = Math.abs(paise);
+    const formatted = new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'INR'
-    }).format(typeof value === 'string' ? parseFloat(value) : value);
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).formatToParts(0);
+    const symbol = formatted.find((part) => part.type === 'currency')?.value ?? '';
+    const whole = Math.floor(absolute / 100);
+    const fraction = String(absolute % 100).padStart(2, '0');
+    const amount = new Intl.NumberFormat('en-IN').format(whole);
+    return `${negative ? '-' : ''}${symbol}${amount}.${fraction}`;
   };
 
   return (
@@ -169,7 +184,7 @@ export function PaymentModal({ booking, isOpen, onClose, onPaymentRecorded }: Pa
                     </div>
                     <button
                       type="button"
-                      onClick={() => setAmount(balanceDue.toFixed(2))}
+                      onClick={() => setAmount(balanceDue)}
                       className="mt-1 text-xs text-primary-600 hover:text-primary-700"
                     >
                       Pay full balance

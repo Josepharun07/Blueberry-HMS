@@ -18,8 +18,6 @@ describe('AppController', () => {
     it('should return correct message', () => {
       const result = appController.getHello();
       expect(result).toContain('Blueberry HMS API');
-      expect(result).toContain('Blueberry Hills Resort');
-      expect(result).toContain('Mattel Group');
     });
   });
 

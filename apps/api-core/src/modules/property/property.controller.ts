@@ -10,12 +10,18 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { UseGuards } from '@nestjs/common';
 import { PropertyService } from './property.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../../common/enums/user-role.enum';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
 
 @ApiTags('Property Management')
 @Controller('property')
+@UseGuards(JwtAuthGuard)
+@Roles(UserRole.OWNER)
 export class PropertyController {
   constructor(private readonly propertyService: PropertyService) {}
 

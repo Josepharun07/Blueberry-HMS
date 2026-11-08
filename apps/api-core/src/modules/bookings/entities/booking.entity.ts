@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Check,
 } from 'typeorm';
 import { Guest } from '../../guests/entities/guest.entity';
 import { Room } from '../../rooms/entities/room.entity';
@@ -29,6 +30,8 @@ export enum PaymentStatus {
 }
 
 @Entity('bookings')
+@Check('CHK_booking_amounts_non_negative', '"paid_amount" >= 0 AND "total_amount" >= 0')
+@Check('CHK_booking_paid_lte_total', '"paid_amount" <= "total_amount"')
 export class Booking {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -65,23 +68,23 @@ export class Booking {
   @Column({ type: 'timestamp', nullable: true })
   actualCheckOutTime: Date;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  roomRate: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  roomRate: string;
 
   @Column({ type: 'int' })
   numberOfNights: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  taxAmount: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  taxAmount: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  discountAmount: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  discountAmount: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  totalAmount: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  totalAmount: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  paidAmount: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  paidAmount: string;
 
   @Column({
     type: 'enum',
@@ -101,15 +104,15 @@ export class Booking {
   numberOfGuests: number;
 
   @Column({ type: 'text', nullable: true })
-  specialRequests: string;
+  specialRequests: string | null;
 
   @Column({ type: 'text', nullable: true })
-  internalNotes: string;
+  internalNotes: string | null;
 
   @Column({ nullable: true })
-  bookingSource: string;
+  bookingSource: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, unique: true })
   confirmationNumber: string;
 
   @CreateDateColumn()

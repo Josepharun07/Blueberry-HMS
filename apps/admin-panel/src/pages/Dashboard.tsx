@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { apiFetch } from '../lib/api/http';
 import { useAuthStore } from '../lib/store/authStore';
 import { logger } from '../lib/logging/logger';
 
 export function Dashboard() {
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const clearSession = useAuthStore((s) => s.clearSession);
   const [triggerError, setTriggerError] = useState(false);
 
   if (triggerError) {
@@ -22,7 +23,12 @@ export function Dashboard() {
                 Welcome, {user?.firstName} {user?.lastName}
               </p>
             </div>
-            <button onClick={logout} className="btn btn-primary">
+            <button
+              onClick={() => {
+                void apiFetch('/api/v1/auth/logout', { method: 'POST' }).finally(clearSession);
+              }}
+              className="btn btn-primary"
+            >
               Logout
             </button>
           </div>

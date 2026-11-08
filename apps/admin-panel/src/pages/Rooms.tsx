@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '../lib/store/authStore';
+import { apiFetch } from '../lib/api/http';
 import { RoomStatusModal } from '../components/rooms/RoomStatusModal';
 import { RoomDetailsModal } from '../components/rooms/RoomDetailsModal';
 
@@ -27,7 +27,6 @@ const STATUS_FILTERS = [
 ];
 
 export function Rooms() {
-  const token = useAuthStore((s) => s.token);
   const queryClient = useQueryClient();
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -37,9 +36,7 @@ export function Rooms() {
   const { data: rooms, isLoading } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:4000/api/v1/rooms', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await apiFetch('/api/v1/rooms');
       if (!response.ok) throw new Error('Failed to fetch rooms');
       return response.json() as Promise<Room[]>;
     },

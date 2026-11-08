@@ -1,9 +1,20 @@
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { apiFetch } from '../../lib/api/http';
 import { useAuthStore } from '../../lib/store/authStore';
 
 export function Layout() {
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, clearSession } = useAuthStore();
+  const navigate = useNavigate();
+
+  const logout = async () => {
+    try {
+      await apiFetch('/api/v1/auth/logout', { method: 'POST' });
+    } finally {
+      clearSession();
+      navigate('/login');
+    }
+  };
 
   const navigation = [
     { name: 'Dashboard', path: '/', icon: '📊' },

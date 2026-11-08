@@ -1,14 +1,12 @@
-
 services:
-  # === DATABASE ===
   postgres:
     image: postgres:16-alpine
     container_name: blueberry_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
     ports:
       - "5432:5432"
     volumes:
@@ -17,12 +15,11 @@ services:
     networks:
       - blueberry_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # === REDIS (Cache & Queue) ===
   redis:
     image: redis:7-alpine
     container_name: blueberry_redis
@@ -39,20 +36,19 @@ services:
       timeout: 3s
       retries: 5
 
-  # === AUTHENTICATION (Keycloak) ===
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
     container_name: blueberry_keycloak
     restart: unless-stopped
     command: start-dev
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:?KEYCLOAK_ADMIN is required}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD is required}
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
-      KC_DB_USERNAME: ${DB_USER}
-      KC_DB_PASSWORD: ${DB_PASSWORD}
-      KC_HOSTNAME: localhost
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:?DB_NAME is required}
+      KC_DB_USERNAME: ${DB_USER:?DB_USER is required}
+      KC_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:?KEYCLOAK_HOSTNAME is required}
       KC_HTTP_ENABLED: true
     ports:
       - "8080:8080"
@@ -62,15 +58,14 @@ services:
     networks:
       - blueberry_network
 
-  # === DATABASE ADMIN ===
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: blueberry_pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@blueberryhillsmunnar.in
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?PGADMIN_DEFAULT_EMAIL is required}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?PGADMIN_DEFAULT_PASSWORD is required}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
       - "5050:80"
     depends_on:

@@ -14,10 +14,11 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const { method, url, ip } = request;
+    const method = request.method;
+    const path = (request.path || String(request.url || '').split('?')[0]) as string;
     const startTime = Date.now();
 
-    this.logger.log(`→ ${method} ${url} from ${ip}`, 'HTTP');
+    this.logger.log(`→ ${method} ${path}`, 'HTTP');
 
     return next.handle().pipe(
       tap({
@@ -26,16 +27,16 @@ export class LoggingInterceptor implements NestInterceptor {
           const { statusCode } = response;
           const duration = Date.now() - startTime;
 
-          this.logger.performance(url, duration, statusCode);
+          this.logger.performance(path, duration, statusCode);
           this.logger.log(
-            `✓ ${method} ${url} ${statusCode} (${duration}ms)`,
+            `✓ ${method} ${path} ${statusCode} (${duration}ms)`,
             'HTTP'
           );
         },
         error: (error) => {
           const duration = Date.now() - startTime;
           this.logger.error(
-            `✗ ${method} ${url} ${error.status || 500} (${duration}ms)`,
+            `✗ ${method} ${path} ${error.status || 500} (${duration}ms)`,
             error.stack,
             'HTTP'
           );

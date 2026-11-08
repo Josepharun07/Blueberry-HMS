@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -14,7 +15,9 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto & { password?: string }): Promise<User> {
+  async create(createUserDto: CreateUserDto, actor?: { role: UserRole }): Promise<User> {
+    this.assertRoleGrant(createUserDto.role, actor);
+
     const existingUser = await this.userRepository.findOne({
       where: { email: createUserDto.email },
       withDeleted: true,
@@ -24,7 +27,8 @@ export class UserService {
       throw new ConflictException('Email already registered');
     }
 
-    const user = this.userRepository.create(createUserDto);
+    const password = await bcrypt.hash(createUserDto.password, 12);
+    const user = this.userRepository.create({ ...createUserDto, password });
     return await this.userRepository.save(user);
   }
 
@@ -73,17 +77,26 @@ export class UserService {
     });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto, actor?: { role: UserRole }): Promise<User> {
     const user = await this.findOne(id);
-    
+
+    if (updateUserDto.role) {
+      this.assertRoleGrant(updateUserDto.role, actor);
+    }
+
     if (updateUserDto.email && updateUserDto.email !== user.email) {
       const existingUser = await this.findByEmail(updateUserDto.email);
-      if (existingUser) {
+      if (existingUser && existingUser.id !== user.id) {
         throw new ConflictException('Email already in use');
       }
     }
 
-    Object.assign(user, updateUserDto);
+    const next = { ...updateUserDto };
+    if (next.password) {
+      next.password = await bcrypt.hash(next.password, 12);
+    }
+
+    Object.assign(user, next);
     return await this.userRepository.save(user);
   }
 
@@ -92,10 +105,16 @@ export class UserService {
     await this.userRepository.softRemove(user);
   }
 
-  async updateLastLogin(userId: string, ipAddress: string): Promise<void> {
+  async updateLastLogin(userId: string, ipAddress: string | null): Promise<void> {
     await this.userRepository.update(userId, {
       lastLoginAt: new Date(),
       lastLoginIp: ipAddress,
     });
+  }
+
+  private assertRoleGrant(role: UserRole, actor?: { role: UserRole }) {
+    if (role === UserRole.SUPER_ADMIN && actor?.role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('Only a super admin can grant that role');
+    }
   }
 }
