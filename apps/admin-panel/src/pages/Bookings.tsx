@@ -1,25 +1,26 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '../lib/store/authStore';
+import { apiFetch } from '../lib/api/http';
 import type { Booking } from '../types/booking.types';
 import { bookingActions } from '../lib/api/bookings';
 import { BookingDetailsModal } from '../components/bookings/BookingDetailsModal';
 import { PaymentModal } from '../components/bookings/PaymentModal';
+import { InvoiceModal } from '../components/bookings/InvoiceModal';
+import { CreateBookingModal } from '../components/bookings/CreateBookingModal';
 
 export function Bookings() {
-  const token = useAuthStore((s) => s.token);
   const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [invoiceBookingId, setInvoiceBookingId] = useState<string | null>(null);
 
   const { data: bookings, isLoading, error } = useQuery({
     queryKey: ['bookings'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:4000/api/v1/bookings', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await apiFetch('/api/v1/bookings');
       if (!response.ok) throw new Error('Failed to fetch bookings');
       return response.json() as Promise<Booking[]>;
     },
@@ -144,7 +145,7 @@ export function Bookings() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Bookings</h1>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={() => setIsCreateOpen(true)}>
           + New Booking
         </button>
       </div>
@@ -227,6 +228,12 @@ export function Bookings() {
                       >
                         View
                       </button>
+                      <button
+                        onClick={() => setInvoiceBookingId(booking.id)}
+                        className="text-primary-600 hover:text-primary-900"
+                      >
+                        Bill
+                      </button>
                       {booking.paymentStatus !== 'PAID' && booking.status !== 'CANCELLED' && (
                         <button 
                           onClick={() => handleRecordPayment(booking)}
@@ -283,6 +290,18 @@ export function Bookings() {
         booking={selectedBooking}
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
+      />
+
+      <CreateBookingModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreated={() => queryClient.invalidateQueries({ queryKey: ['bookings'] })}
+      />
+
+      <InvoiceModal
+        bookingId={invoiceBookingId}
+        isOpen={invoiceBookingId !== null}
+        onClose={() => setInvoiceBookingId(null)}
       />
 
       <PaymentModal

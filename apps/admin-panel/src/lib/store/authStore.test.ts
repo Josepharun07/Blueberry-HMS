@@ -5,47 +5,44 @@ describe('Auth Store', () => {
   beforeEach(() => {
     useAuthStore.setState({
       user: null,
-      token: null,
       isAuthenticated: false,
     });
     localStorage.clear();
   });
 
-  it('should have initial state', () => {
+  it('starts signed out and does not store a token', () => {
     const state = useAuthStore.getState();
-    
     expect(state.user).toBeNull();
-    expect(state.token).toBeNull();
     expect(state.isAuthenticated).toBe(false);
+    expect(localStorage.getItem('auth_token')).toBeNull();
   });
 
-  it('should login successfully', () => {
+  it('keeps the session in memory', () => {
     const mockUser = {
       id: '1',
-      email: 'test@test.com',
+      email: 'staff@example.com',
       firstName: 'Test',
       lastName: 'User',
       role: 'FRONT_DESK',
     };
-    const mockToken = 'mock-token-123';
 
-    useAuthStore.getState().login(mockToken, mockUser as any);
+    useAuthStore.getState().setSession(mockUser, 'csrf-token');
 
     const state = useAuthStore.getState();
     expect(state.user).toEqual(mockUser);
-    expect(state.token).toBe(mockToken);
     expect(state.isAuthenticated).toBe(true);
-    expect(localStorage.getItem('auth_token')).toBe(mockToken);
+    expect(localStorage.getItem('auth_token')).toBeNull();
   });
 
-  it('should logout successfully', () => {
-    useAuthStore.getState().login('token', { id: '1' } as any);
-    useAuthStore.getState().logout();
+  it('clears the session on logout', () => {
+    useAuthStore.getState().setSession(
+      { id: '1', email: 'staff@example.com', firstName: 'Test', lastName: 'User', role: 'FRONT_DESK' },
+      'csrf-token',
+    );
+    useAuthStore.getState().clearSession();
 
     const state = useAuthStore.getState();
     expect(state.user).toBeNull();
-    expect(state.token).toBeNull();
     expect(state.isAuthenticated).toBe(false);
-    expect(localStorage.getItem('auth_token')).toBeNull();
   });
 });

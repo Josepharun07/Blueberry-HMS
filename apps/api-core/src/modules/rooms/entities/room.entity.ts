@@ -48,7 +48,7 @@ export class Room {
   status: RoomStatus;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  basePrice: number;
+  basePrice: string;
 
   @Column({ default: 2 })
   maxOccupancy: number;

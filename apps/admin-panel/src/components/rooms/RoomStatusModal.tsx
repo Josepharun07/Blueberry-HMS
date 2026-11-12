@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
+import { apiFetch } from '../../lib/api/http';
 
 interface Room {
   id: string;
@@ -16,7 +17,6 @@ interface RoomStatusModalProps {
 
 const ROOM_STATUSES = [
   { value: 'AVAILABLE', label: 'Available', color: 'bg-green-100 text-green-800' },
-  { value: 'OCCUPIED', label: 'Occupied', color: 'bg-red-100 text-red-800' },
   { value: 'CLEANING', label: 'Cleaning', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'MAINTENANCE', label: 'Maintenance', color: 'bg-orange-100 text-orange-800' },
   { value: 'OUT_OF_ORDER', label: 'Out of Order', color: 'bg-gray-100 text-gray-800' },
@@ -34,18 +34,15 @@ export function RoomStatusModal({ room, isOpen, onClose, onStatusChanged }: Room
     setLoading(true);
     setError('');
 
+    if (room.status === 'OCCUPIED') {
+      setError('Checkout releases an occupied room');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('auth-storage');
-      if (!token) throw new Error('No authentication token');
-
-      const parsed = JSON.parse(token);
-
-      const response = await fetch(`http://localhost:4000/api/v1/rooms/${room.id}/status`, {
+      const response = await apiFetch(`/api/v1/rooms/${room.id}/status`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${parsed.state.token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ status: selectedStatus }),
       });
 

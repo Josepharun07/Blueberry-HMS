@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsArray,
   IsBoolean,
+  Matches,
   Min,
   Max,
 } from 'class-validator';
@@ -26,9 +27,9 @@ export class CreateRoomDto {
   @IsEnum(RoomStatus)
   status?: RoomStatus;
 
-  @IsNumber()
-  @Min(0)
-  basePrice: number;
+  @IsString()
+  @Matches(/^\d{1,10}(\.\d{1,2})?$/)
+  basePrice: string;
 
   @IsNumber()
   @Min(1)

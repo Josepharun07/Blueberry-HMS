@@ -26,29 +26,29 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const exceptionResponse = exception.getResponse();
 
       if (typeof exceptionResponse === 'object') {
-        message = (exceptionResponse as any).message || message;
-        errors = (exceptionResponse as any).errors || null;
+        message = (exceptionResponse as { message?: string }).message || message;
+        errors = (exceptionResponse as { errors?: unknown }).errors || null;
       } else {
-        message = exceptionResponse as string;
+        message = exceptionResponse;
       }
-    } else if (exception instanceof Error) {
-      message = exception.message;
     }
 
-    // Log the error with full details
+    const path = request.path || request.url.split('?')[0];
+    const clientMessage = status >= 500 ? 'Internal server error' : message;
+
     this.logger.error(
-      `${request.method} ${request.url} - Status: ${status} - Message: ${message}`,
+      `${request.method} ${path} - Status: ${status}`,
       exception instanceof Error ? exception.stack : '',
-      'HttpExceptionFilter'
+      'HttpExceptionFilter',
     );
 
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path,
       method: request.method,
-      message,
-      ...(errors && { errors }),
+      message: clientMessage,
+      ...(status < 500 && errors ? { errors } : {}),
     });
   }
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../lib/api/http';
 import { useAuthStore } from '../lib/store/authStore';
 import { logger } from '../lib/logging/logger';
 
@@ -9,20 +10,18 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const login = useAuthStore((s) => s.login);
+  const setSession = useAuthStore((s) => s.setSession);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    logger.info('Login attempt', 'Login', { email });
+    logger.info('Login attempt', 'Login');
 
     try {
-      // REAL API CALL
-      const response = await fetch('http://localhost:4000/api/v1/auth/login', {
+      const response = await apiFetch('/api/v1/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
@@ -31,10 +30,8 @@ export function Login() {
       }
 
       const data = await response.json();
-      
-      // USE REAL TOKEN FROM API RESPONSE
-      login(data.access_token, data.user);
-      
+      setSession(data.user, data.csrfToken);
+
       logger.info('Login successful', 'Login');
       navigate('/');
     } catch (err: any) {
@@ -54,15 +51,7 @@ export function Login() {
             <span className="text-white font-bold text-2xl">B</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900">Blueberry HMS</h2>
-          <p className="text-gray-600 mt-2">Blueberry Hills Resort, Munnar</p>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-blue-800 font-medium">🔑 Login Credentials:</p>
-          <p className="text-sm text-blue-700 mt-1 font-mono">
-            admin@blueberryhillsmunnar.in<br/>
-            Admin@123
-          </p>
+          <p className="text-gray-600 mt-2">Staff sign in</p>
         </div>
 
         {error && (
@@ -80,7 +69,7 @@ export function Login() {
               className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@blueberryhillsmunnar.in"
+              placeholder="Work email"
             />
           </div>
           <div>
@@ -91,7 +80,7 @@ export function Login() {
               className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Admin@123"
+              autoComplete="current-password"
             />
           </div>
           <button type="submit" disabled={loading} className="w-full btn btn-primary py-3">

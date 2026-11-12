@@ -33,6 +33,9 @@ export class Guest {
   @Column({ nullable: true })
   country: string;
 
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  nationality: string | null;
+
   @Column({ nullable: true })
   idType: string; // 'passport', 'driving_license', 'national_id'
 

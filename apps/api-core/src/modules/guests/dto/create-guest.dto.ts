@@ -29,14 +29,22 @@ export class CreateGuestDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(80)
   country?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(80)
+  nationality?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
   idType?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(40)
   idNumber?: string;
 
   @IsOptional()

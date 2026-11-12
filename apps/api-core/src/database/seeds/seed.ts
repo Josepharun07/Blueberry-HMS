@@ -1,131 +1,77 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../../app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Room, RoomType, RoomStatus } from '../../modules/rooms/entities/room.entity';
-import { Guest } from '../../modules/guests/entities/guest.entity';
-import { Booking, BookingStatus, PaymentStatus } from '../../modules/bookings/entities/booking.entity';
+import * as bcrypt from 'bcryptjs';
+import { AppModule } from '../../app.module';
+import { Room, RoomType } from '../../modules/rooms/entities/room.entity';
+import { User } from '../../modules/user/entities/user.entity';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { UserStatus } from '../../common/enums/user-status.enum';
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value || value.trim() === '') {
+    throw new Error(`Missing required environment variable ${name}`);
+  }
+  return value.trim();
+}
 
 async function seed() {
+  if (process.env.SEED_ENABLED !== 'true') {
+    console.log('SEED_ENABLED is not true. Nothing was written.');
+    return;
+  }
+  if (process.env.NODE_ENV === 'production' && process.env.SEED_ALLOW_PRODUCTION !== 'true') {
+    throw new Error('Refusing to seed production. Set SEED_ALLOW_PRODUCTION=true to override.');
+  }
+
+  const email = required('SEED_ADMIN_EMAIL');
+  const password = required('SEED_ADMIN_PASSWORD');
+  const firstName = required('SEED_ADMIN_FIRST_NAME');
+  const lastName = required('SEED_ADMIN_LAST_NAME');
+  if (password.length < 12) {
+    throw new Error('SEED_ADMIN_PASSWORD must be at least 12 characters');
+  }
+
   const app = await NestFactory.createApplicationContext(AppModule);
-
   const roomRepo = app.get(getRepositoryToken(Room));
-  const guestRepo = app.get(getRepositoryToken(Guest));
-  const bookingRepo = app.get(getRepositoryToken(Booking));
+  const userRepo = app.get(getRepositoryToken(User));
 
-  console.log('🌱 Seeding database...\n');
+  const existingAdmin = await userRepo.findOne({ where: { email } });
+  if (!existingAdmin) {
+    const user = userRepo.create({
+      email,
+      password: await bcrypt.hash(password, 12),
+      firstName,
+      lastName,
+      role: UserRole.SUPER_ADMIN,
+      status: UserStatus.ACTIVE,
+    });
+    await userRepo.save(user);
+    console.log('Admin account created');
+  } else {
+    console.log('Admin account already exists');
+  }
 
-  // Check existing data
-  const existingRooms = await roomRepo.count();
-  const existingGuests = await guestRepo.count();
-  const existingBookings = await bookingRepo.count();
-
-  console.log(`📊 Current data: ${existingRooms} rooms, ${existingGuests} guests, ${existingBookings} bookings\n`);
-
-  // Skip if data exists
-  let createdRooms: Room[] = [];
-  let createdGuests: Guest[] = [];
-
-  if (existingRooms === 0) {
-    console.log('📦 Creating rooms...');
+  if ((await roomRepo.count()) === 0) {
     const rooms = [
-      { roomNumber: '101', floor: 1, type: RoomType.STANDARD, basePrice: 3500, maxOccupancy: 2, description: 'Cozy standard room with garden view', amenities: ['WiFi', 'TV', 'AC'], viewType: 'Garden' },
-      { roomNumber: '102', floor: 1, type: RoomType.STANDARD, basePrice: 3500, maxOccupancy: 2, description: 'Standard room with mountain view', amenities: ['WiFi', 'TV', 'AC'], viewType: 'Mountain' },
-      { roomNumber: '201', floor: 2, type: RoomType.DELUXE, basePrice: 5500, maxOccupancy: 3, description: 'Spacious deluxe room with balcony', amenities: ['WiFi', 'TV', 'AC', 'Mini Bar', 'Balcony'], viewType: 'Mountain' },
-      { roomNumber: '202', floor: 2, type: RoomType.DELUXE, basePrice: 5500, maxOccupancy: 3, description: 'Deluxe room with tea estate view', amenities: ['WiFi', 'TV', 'AC', 'Mini Bar'], viewType: 'Tea Estate' },
-      { roomNumber: '301', floor: 3, type: RoomType.SUITE, basePrice: 8500, maxOccupancy: 4, description: 'Luxury suite with panoramic views', amenities: ['WiFi', 'TV', 'AC', 'Mini Bar', 'Balcony', 'Jacuzzi'], viewType: 'Panoramic' },
-      { roomNumber: '302', floor: 3, type: RoomType.FAMILY, basePrice: 7500, maxOccupancy: 5, description: 'Family room with two bedrooms', amenities: ['WiFi', 'TV', 'AC', 'Kitchenette'], viewType: 'Garden' },
+      { roomNumber: '101', floor: 1, type: RoomType.STANDARD, basePrice: '3500.00', maxOccupancy: 2 },
+      { roomNumber: '102', floor: 1, type: RoomType.STANDARD, basePrice: '3500.00', maxOccupancy: 2 },
+      { roomNumber: '201', floor: 2, type: RoomType.DELUXE, basePrice: '5500.00', maxOccupancy: 3 },
+      { roomNumber: '202', floor: 2, type: RoomType.DELUXE, basePrice: '5500.00', maxOccupancy: 3 },
+      { roomNumber: '301', floor: 3, type: RoomType.SUITE, basePrice: '8500.00', maxOccupancy: 4 },
+      { roomNumber: '302', floor: 3, type: RoomType.FAMILY, basePrice: '7500.00', maxOccupancy: 5 },
     ];
-
     for (const roomData of rooms) {
-      const room = roomRepo.create(roomData);
-      const saved = await roomRepo.save(room);
-      createdRooms.push(saved);
-      console.log(`  ✅ Room ${saved.roomNumber} created`);
+      await roomRepo.save(roomRepo.create(roomData));
     }
-  } else {
-    console.log('⏩ Rooms already exist, skipping...');
-    createdRooms = await roomRepo.find();
+    console.log('Room inventory created');
   }
-
-  if (existingGuests === 0) {
-    console.log('\n👥 Creating guests...');
-    const guests = [
-      { firstName: 'Rajesh', lastName: 'Kumar', email: 'rajesh.kumar@email.com', phone: '+919876543210', address: 'MG Road', city: 'Bangalore', country: 'India' },
-      { firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@email.com', phone: '+919876543211', address: 'Anna Nagar', city: 'Chennai', country: 'India' },
-      { firstName: 'John', lastName: 'Doe', email: 'john.doe@email.com', phone: '+919876543212', address: '123 Main St', city: 'Mumbai', country: 'India' },
-    ];
-
-    for (const guestData of guests) {
-      const guest = guestRepo.create(guestData);
-      const saved = await guestRepo.save(guest);
-      createdGuests.push(saved);
-      console.log(`  ✅ Guest ${saved.firstName} ${saved.lastName} created`);
-    }
-  } else {
-    console.log('⏩ Guests already exist, skipping...');
-    createdGuests = await guestRepo.find();
-  }
-
-  if (existingBookings === 0) {
-    console.log('\n📅 Creating bookings...');
-    
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const nextWeek = new Date(today);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-
-    const bookings = [
-      {
-        guestId: createdGuests[0].id,
-        roomId: createdRooms[0].id,
-        checkInDate: today,
-        checkOutDate: tomorrow,
-        numberOfNights: 1,
-        roomRate: 3500,
-        totalAmount: 3500,
-        status: BookingStatus.CHECKED_IN,
-        paymentStatus: PaymentStatus.PAID,
-        numberOfGuests: 2,
-        bookingSource: 'website',
-        confirmationNumber: 'BH' + Date.now(),
-      },
-      {
-        guestId: createdGuests[1].id,
-        roomId: createdRooms[2].id,
-        checkInDate: tomorrow,
-        checkOutDate: nextWeek,
-        numberOfNights: 6,
-        roomRate: 5500,
-        totalAmount: 33000,
-        status: BookingStatus.CONFIRMED,
-        paymentStatus: PaymentStatus.PARTIAL,
-        paidAmount: 10000,
-        numberOfGuests: 2,
-        bookingSource: 'phone',
-        confirmationNumber: 'BH' + (Date.now() + 1),
-      },
-    ];
-
-    for (const bookingData of bookings) {
-      const booking = bookingRepo.create(bookingData);
-      const saved = await bookingRepo.save(booking);
-      console.log(`  ✅ Booking ${saved.confirmationNumber} created`);
-    }
-  } else {
-    console.log('⏩ Bookings already exist, skipping...');
-  }
-
-  console.log('\n✅ Seeding complete!\n');
-  console.log('📊 Final Summary:');
-  console.log(`   - ${await roomRepo.count()} rooms`);
-  console.log(`   - ${await guestRepo.count()} guests`);
-  console.log(`   - ${await bookingRepo.count()} bookings`);
 
   await app.close();
 }
 
 seed().catch((error) => {
-  console.error('❌ Seeding failed:', error);
+  console.error('Seeding failed');
+  console.error(error instanceof Error ? error.message : 'Unknown error');
   process.exit(1);
 });

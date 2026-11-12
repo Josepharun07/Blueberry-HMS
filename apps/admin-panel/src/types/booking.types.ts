@@ -54,10 +54,16 @@ export interface CreateBookingDto {
   roomId: string;
   checkInDate: string;
   checkOutDate: string;
-  numberOfNights: number;
-  roomRate: number;
-  totalAmount: number;
   numberOfGuests: number;
   specialRequests?: string;
   bookingSource?: string;
+}
+
+export interface BookingQuote {
+  nights: number;
+  nightlyRate: string;
+  taxAmount: string;
+  discountAmount: string;
+  totalAmount: string;
+  currency: 'INR';
 }

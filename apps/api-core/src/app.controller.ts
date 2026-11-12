@@ -1,6 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AppService } from './app.service';
+import { Public } from './common/decorators/public.decorator';
 
+@Public()
+@SkipThrottle()
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
@@ -16,7 +20,6 @@ export class AppController {
       status: 'ok',
       timestamp: new Date().toISOString(),
       service: 'Blueberry HMS API',
-      property: 'Blueberry Hills Resort, Munnar',
       version: '1.0.0',
     };
   }

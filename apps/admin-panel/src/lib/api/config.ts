@@ -1,9 +1,12 @@
-export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_URL, // || 'http://localhost:4000',
-  apiPrefix: '/api/v1',
-  timeout: 30000,
-};
+function apiOrigin(): string {
+  const value = import.meta.env.VITE_API_URL;
+  if (typeof value !== 'string' || value.trim() === '') {
+    return '';
+  }
+  return value.trim().replace(/\/$/, '');
+}
 
-export const getApiUrl = (endpoint: string) => {
-  return `${API_CONFIG.baseURL}${endpoint}`;
-};
+export function getApiUrl(path: string): string {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return `${apiOrigin()}${normalized}`;
+}

@@ -1,29 +1,30 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { setCsrfToken } from '../api/http';
 
-interface AuthState {
-  user: any;
-  token: string | null;
-  isAuthenticated: boolean;
-  login: (token: string, user: any) => void;
-  logout: () => void;
+export interface SessionUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      login: (token, user) => {
-        localStorage.setItem('auth_token', token);
-        set({ token, user, isAuthenticated: true });
-      },
-      logout: () => {
-        localStorage.removeItem('auth_token');
-        set({ token: null, user: null, isAuthenticated: false });
-      },
-    }),
-    { name: 'auth-storage' }
-  )
-);
+interface AuthState {
+  user: SessionUser | null;
+  isAuthenticated: boolean;
+  setSession: (user: SessionUser, csrfToken: string) => void;
+  clearSession: () => void;
+}
+
+export const useAuthStore = create<AuthState>()((set) => ({
+  user: null,
+  isAuthenticated: false,
+  setSession: (user, csrfToken) => {
+    setCsrfToken(csrfToken);
+    set({ user, isAuthenticated: true });
+  },
+  clearSession: () => {
+    setCsrfToken(null);
+    set({ user: null, isAuthenticated: false });
+  },
+}));

@@ -1,15 +1,20 @@
-# Set your token
-TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MWQxNDU1Zi0yYmM2LTRhMWItOTJmZS03OWM2ZWJlMDA0MGUiLCJlbWFpbCI6ImFkbWluQGJsdWViZXJyeWhpbGxzbXVubmFyLmluIiwicm9sZSI6Ik1BTkFHRVIiLCJpYXQiOjE3NzM4OTE0NTAsImV4cCI6MTc3NDQ5NjI1MH0.iq3x4KaOD_FF6oqESzoMiBilJ8tyXqDBiIZiw7wRriU"
+#!/bin/sh
+# Calls the local API with a bearer token you supply. Nothing in this file is a credential.
+if [ -z "$TOKEN" ]; then
+  echo "Set TOKEN to a current staff bearer token, then run this script again." >&2
+  exit 1
+fi
 
-# Test 1: Get all rooms
-echo "🏨 ROOMS:"
-curl http://localhost:4000/api/v1/rooms \
-  -H "Authorization: Bearer $TOKEN" | jq
+api="${API_ORIGIN:-http://127.0.0.1:4000}"
 
-echo -e "\n👥 GUESTS:"
-curl http://localhost:4000/api/v1/guests \
-  -H "Authorization: Bearer $TOKEN" | jq
+echo "ROOMS:"
+curl --fail-with-body "$api/api/v1/rooms" -H "Authorization: Bearer $TOKEN"
 
-echo -e "\n📅 BOOKINGS:"
-curl http://localhost:4000/api/v1/bookings \
-  -H "Authorization: Bearer $TOKEN" | jq
+echo ""
+echo "GUESTS:"
+curl --fail-with-body "$api/api/v1/guests" -H "Authorization: Bearer $TOKEN"
+
+echo ""
+echo "BOOKINGS:"
+curl --fail-with-body "$api/api/v1/bookings" -H "Authorization: Bearer $TOKEN"
+echo ""

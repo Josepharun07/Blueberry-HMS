@@ -1,76 +1,68 @@
 import {
-  IsString,
-  IsDateString,
-  IsNumber,
+  IsInt,
   IsOptional,
-  IsEnum,
-  Min,
+  IsString,
+  IsUUID,
+  Matches,
   Max,
+  MaxLength,
+  Min,
 } from 'class-validator';
-import { BookingStatus, PaymentStatus } from '../entities/booking.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateBookingDto {
-  @IsString()
+  @ApiProperty()
+  @IsUUID()
   guestId: string;
 
-  @IsString()
+  @ApiProperty()
+  @IsUUID()
   roomId: string;
 
-  @IsDateString()
+  @ApiProperty({ example: '2026-12-24' })
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
   checkInDate: string;
 
-  @IsDateString()
+  @ApiProperty({ example: '2026-12-26' })
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
   checkOutDate: string;
 
-  @IsNumber()
-  @Min(1)
-  numberOfNights: number;
-
-  @IsNumber()
-  @Min(0)
-  roomRate: number;
-
-  @IsNumber()
-  @Min(0)
-  totalAmount: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  taxAmount?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  discountAmount?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  paidAmount?: number;
-
-  @IsOptional()
-  @IsEnum(BookingStatus)
-  status?: BookingStatus;
-
-  @IsOptional()
-  @IsEnum(PaymentStatus)
-  paymentStatus?: PaymentStatus;
-
-  @IsNumber()
+  @ApiProperty()
+  @IsInt()
   @Min(1)
   @Max(10)
   numberOfGuests: number;
 
+  @ApiProperty({ required: false, description: 'Basis points. 100 = 1%. Managers only.' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(10000)
+  discountBasisPoints?: number;
+
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
+  discountReason?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
   specialRequests?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   internalNotes?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(40)
   bookingSource?: string;
 }

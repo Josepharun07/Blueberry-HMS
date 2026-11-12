@@ -3,9 +3,18 @@ import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '../../../common/enums/user-role.enum';
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'john.doe@blueberryhillsmunnar.in' })
+  @ApiProperty({ example: 'staff@example.com' })
   @IsEmail()
   email: string;
+
+  @ApiProperty({ minLength: 12 })
+  @IsString()
+  @MinLength(12)
+  @MaxLength(128)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, {
+    message: 'Password must contain uppercase, lowercase, and a number',
+  })
+  password: string;
 
   @ApiProperty({ example: 'John' })
   @IsString()

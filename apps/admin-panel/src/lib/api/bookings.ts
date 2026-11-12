@@ -1,102 +1,67 @@
-import axios from 'axios';
-import { getApiUrl } from './config';
-import type { Booking, CreateBookingDto } from '../../types/booking.types';
+import { apiFetch } from './http';
+import type { Booking, BookingQuote, CreateBookingDto } from '../../types/booking.types';
 
-const getAuthHeader = () => {
-  const token = localStorage.getItem('auth-storage');
-  if (!token) return {};
-  
-  try {
-    const parsed = JSON.parse(token);
-    return {
-      Authorization: `Bearer ${parsed.state.token}`,
-    };
-  } catch {
-    return {};
+async function parse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    let message = 'Request failed';
+    try {
+      const body = await response.json();
+      if (typeof body?.message === 'string') message = body.message;
+      if (Array.isArray(body?.message)) message = body.message.join(', ');
+    } catch {
+      message = response.statusText || message;
+    }
+    throw new Error(message);
   }
-};
+  return response.json() as Promise<T>;
+}
 
 export const bookingsApi = {
-  getAll: async () => {
-    const response = await axios.get<Booking[]>(
-      getApiUrl('/api/v1/bookings'),
-      { headers: getAuthHeader() }
-    );
-    return response.data;
-  },
+  getAll: async () => parse<Booking[]>(await apiFetch('/api/v1/bookings')),
 
-  getById: async (id: string) => {
-    const response = await axios.get<Booking>(
-      getApiUrl(`/api/v1/bookings/${id}`),
-      { headers: getAuthHeader() }
-    );
-    return response.data;
-  },
+  getById: async (id: string) => parse<Booking>(await apiFetch(`/api/v1/bookings/${id}`)),
 
-  create: async (data: CreateBookingDto) => {
-    const response = await axios.post<Booking>(
-      getApiUrl('/api/v1/bookings'),
-      data,
-      { headers: getAuthHeader() }
-    );
-    return response.data;
-  },
+  quote: async (data: CreateBookingDto) =>
+    parse<BookingQuote>(
+      await apiFetch('/api/v1/bookings/quote', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    ),
 
-  checkIn: async (id: string) => {
-    const response = await axios.post<Booking>(
-      getApiUrl(`/api/v1/bookings/${id}/check-in`),
-      {},
-      { headers: getAuthHeader() }
-    );
-    return response.data;
-  },
+  create: async (data: CreateBookingDto) =>
+    parse<Booking>(
+      await apiFetch('/api/v1/bookings', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    ),
 
-  checkOut: async (id: string) => {
-    const response = await axios.post<Booking>(
-      getApiUrl(`/api/v1/bookings/${id}/check-out`),
-      {},
-      { headers: getAuthHeader() }
-    );
-    return response.data;
-  },
+  checkIn: async (id: string) =>
+    parse<Booking>(await apiFetch(`/api/v1/bookings/${id}/check-in`, { method: 'POST' })),
 
-  cancel: async (id: string) => {
-    const response = await axios.post<Booking>(
-      getApiUrl(`/api/v1/bookings/${id}/cancel`),
-      {},
-      { headers: getAuthHeader() }
-    );
-    return response.data;
-  },
+  checkOut: async (id: string) =>
+    parse<Booking>(await apiFetch(`/api/v1/bookings/${id}/check-out`, { method: 'POST' })),
+
+  cancel: async (id: string) =>
+    parse<Booking>(await apiFetch(`/api/v1/bookings/${id}/cancel`, { method: 'POST' })),
+
+  recordPayment: async (
+    bookingId: string,
+    data: { amount: string; paymentMethod: string; reference?: string; notes?: string },
+    idempotencyKey: string,
+  ) =>
+    parse(
+      await apiFetch(`/api/v1/bookings/${bookingId}/payments`, {
+        method: 'POST',
+        headers: { 'Idempotency-Key': idempotencyKey },
+        body: JSON.stringify(data),
+      }),
+    ),
 };
 
 export const bookingActions = {
   checkIn: bookingsApi.checkIn,
   checkOut: bookingsApi.checkOut,
   cancel: bookingsApi.cancel,
-};
-
-export const paymentApi = {
-  recordPayment: async (bookingId: string, data: {
-    amount: number;
-    paymentMethod: string;
-    reference?: string;
-    notes?: string;
-  }) => {
-    const token = localStorage.getItem('auth-storage');
-    if (!token) throw new Error('No authentication token');
-
-    const parsed = JSON.parse(token);
-
-    const response = await axios.post(
-      getApiUrl(`/api/v1/bookings/${bookingId}/payments`),
-      data,
-      {
-        headers: {
-          Authorization: `Bearer ${parsed.state.token}`,
-        },
-      }
-    );
-    return response.data;
-  },
 };

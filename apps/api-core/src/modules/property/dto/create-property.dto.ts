@@ -7,13 +7,13 @@ export class CreatePropertyDto {
   @MaxLength(200)
   name: string;
 
-  @ApiProperty({ example: 'Experience Tranquility in Munnar', required: false })
+  @ApiProperty({ example: 'A quiet stay', required: false })
   @IsOptional()
   @IsString()
   @MaxLength(500)
   tagline?: string;
 
-  @ApiProperty({ example: 'blueberryhillsmunnar.in' })
+  @ApiProperty({ example: 'resort.example' })
   @IsString()
   @MaxLength(100)
   domainUrl: string;
@@ -23,17 +23,17 @@ export class CreatePropertyDto {
   @IsString()
   address?: string;
 
-  @ApiProperty({ example: 'Munnar', required: false })
+  @ApiProperty({ example: 'Town', required: false })
   @IsOptional()
   @IsString()
   city?: string;
 
-  @ApiProperty({ example: 'Kerala', required: false })
+  @ApiProperty({ example: 'State', required: false })
   @IsOptional()
   @IsString()
   state?: string;
 
-  @ApiProperty({ example: '685612', required: false })
+  @ApiProperty({ example: '000000', required: false })
   @IsOptional()
   @IsString()
   pincode?: string;
@@ -48,7 +48,7 @@ export class CreatePropertyDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ example: 'info@blueberryhillsmunnar.in', required: false })
+  @ApiProperty({ example: 'front-desk@example.com', required: false })
   @IsOptional()
   @IsEmail()
   email?: string;
