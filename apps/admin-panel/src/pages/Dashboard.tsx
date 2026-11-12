@@ -51,7 +51,7 @@ export function Dashboard() {
                 <p className="font-medium text-primary-700">📝 Features Enabled</p>
                 <ul className="mt-2 space-y-1 text-sm text-primary-600">
                   <li>✓ Backend: HTTP, Error, Audit logging</li>
-                  <li>✓ Frontend: Console & localStorage logging</li>
+                  <li>✓ Frontend: console logging in development</li>
                   <li>✓ Error boundary for crash protection</li>
                   <li>✓ Daily log file rotation</li>
                 </ul>

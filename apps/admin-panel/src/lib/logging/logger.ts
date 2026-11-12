@@ -37,15 +37,6 @@ class FrontendLogger {
     if (this.isDevelopment || level !== 'debug') {
       console.log(`%c${formattedLog}`, colors[level], data || '');
     }
-
-    try {
-      const logs = JSON.parse(localStorage.getItem('app_logs') || '[]');
-      logs.push(entry);
-      if (logs.length > 50) logs.shift();
-      localStorage.setItem('app_logs', JSON.stringify(logs));
-    } catch (e) {
-      // Ignore
-    }
   }
 
   info(message: string, context?: string, data?: any) {
@@ -66,15 +57,11 @@ class FrontendLogger {
   }
 
   getLogs(): LogEntry[] {
-    try {
-      return JSON.parse(localStorage.getItem('app_logs') || '[]');
-    } catch {
-      return [];
-    }
+    return [];
   }
 
   clearLogs() {
-    localStorage.removeItem('app_logs');
+    return undefined;
   }
 }
 

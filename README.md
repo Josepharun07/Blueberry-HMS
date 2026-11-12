@@ -39,6 +39,8 @@ A database or process can still stop. A receipt is not half-written, and a balan
 - Guest search is `POST /guests/search` with the query in the body.
 - Logs keep ids, amounts, and counts. They omit names, emails, phones, notes, and full payment references.
 - `DB_SYNCHRONIZE=true` is refused in production.
+- Swagger at `/api/docs` is available only when `NODE_ENV` is not production.
+- Docker publishes Postgres, Redis, Keycloak, and PgAdmin on `127.0.0.1`. Redis requires `REDIS_PASSWORD`.
 - The admin panel reads `VITE_API_URL` and keeps the session in memory. It does not store a token in `localStorage`.
 
 In production the admin panel and the API must share a site the browser treats as same-site, or the session cookie will not be sent.

@@ -17,7 +17,7 @@ export function Login() {
     setLoading(true);
     setError('');
     
-    logger.info('Login attempt', 'Login', { email });
+    logger.info('Login attempt', 'Login');
 
     try {
       const response = await apiFetch('/api/v1/auth/login', {
@@ -51,7 +51,7 @@ export function Login() {
             <span className="text-white font-bold text-2xl">B</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900">Blueberry HMS</h2>
-          <p className="text-gray-600 mt-2">Blueberry Hills Resort, Munnar</p>
+          <p className="text-gray-600 mt-2">Staff sign in</p>
         </div>
 
         {error && (

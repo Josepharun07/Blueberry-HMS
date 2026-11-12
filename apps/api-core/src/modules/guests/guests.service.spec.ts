@@ -148,7 +148,9 @@ describe('GuestsService', () => {
 
     const results = await service.search("  O'Brien % _ \\  ", 'user-1');
 
-    expect(results).toEqual([found]);
+    const { idNumber: _hidden, ...listed } = found;
+    expect(results).toEqual([listed]);
+    expect(JSON.stringify(results)).not.toContain('P-1234567');
     expect(guestRepository.createQueryBuilder).toHaveBeenCalledWith('guest');
     expect(queryBuilder.orderBy).toHaveBeenCalledWith(
       'guest.createdAt',

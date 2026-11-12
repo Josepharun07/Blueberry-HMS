@@ -48,15 +48,17 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Blueberry HMS API')
-    .setDescription('Hotel management API. Session cookie plus CSRF header for browser clients.')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addCookieAuth('bh_access')
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
+  if (config.get('NODE_ENV') !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Blueberry HMS API')
+      .setDescription('Hotel management API. Session cookie plus CSRF header for browser clients.')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addCookieAuth('bh_access')
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   const port = config.get<string>('API_PORT') ?? '4000';
   await app.listen(port);

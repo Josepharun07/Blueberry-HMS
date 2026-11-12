@@ -31,9 +31,10 @@ export class GuestsService {
   }
 
   async findAll(): Promise<Guest[]> {
-    return this.guestRepository.find({
+    const guests = await this.guestRepository.find({
       order: { createdAt: 'DESC' },
     });
+    return guests.map((guest) => this.withoutDocumentNumber(guest));
   }
 
   async search(query: string, userId: string): Promise<Guest[]> {
@@ -67,7 +68,7 @@ export class GuestsService {
       resultCount: guests.length,
     });
 
-    return guests;
+    return guests.map((guest) => this.withoutDocumentNumber(guest));
   }
 
   async findOne(id: string): Promise<Guest> {
@@ -98,6 +99,13 @@ export class GuestsService {
     const guest = await this.findOne(id);
     await this.guestRepository.remove(guest);
     this.logger.log(`Guest ${id} deleted`, 'GuestsService');
+  }
+
+  /** Lists and search results omit the identity document number. A single guest record still includes it. */
+  private withoutDocumentNumber(guest: Guest): Guest {
+    const copy = { ...guest } as { idNumber?: string };
+    delete copy.idNumber;
+    return copy as Guest;
   }
 
   /** LIKE metacharacters stay literal inside the bound ILike parameter. */

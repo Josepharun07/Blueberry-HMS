@@ -29,6 +29,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
   @ApiOperation({ summary: 'Disabled unless ALLOW_PUBLIC_REGISTER=true outside production' })
   register(@Body() registerDto: RegisterDto) {
