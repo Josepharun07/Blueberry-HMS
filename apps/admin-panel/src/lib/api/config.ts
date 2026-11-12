@@ -1,7 +1,7 @@
 function apiOrigin(): string {
   const value = import.meta.env.VITE_API_URL;
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new Error('VITE_API_URL is not set');
+    return '';
   }
   return value.trim().replace(/\/$/, '');
 }

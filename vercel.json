@@ -5,6 +5,6 @@
   "buildCommand": "pnpm --filter admin-panel run build",
   "outputDirectory": "apps/admin-panel/dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
