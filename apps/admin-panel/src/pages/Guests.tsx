@@ -8,6 +8,11 @@ interface Guest {
   email: string;
   phone: string;
   city?: string;
+  country?: string;
+  nationality?: string;
+  address?: string;
+  idType?: string;
+  idNumber?: string;
 }
 
 export function Guests() {
@@ -15,6 +20,7 @@ export function Guests() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '' });
+  const [selected, setSelected] = useState<Guest | null>(null);
 
   const search = async () => {
     setError('');
@@ -43,6 +49,38 @@ export function Guests() {
     }
     setForm({ firstName: '', lastName: '', email: '', phone: '' });
     setQuery(form.phone);
+  };
+
+  const openGuest = async (guest: Guest) => {
+    setError('');
+    const response = await apiFetch(`/api/v1/guests/${guest.id}`);
+    if (!response.ok) {
+      setError('Guest record could not be loaded');
+      return;
+    }
+    setSelected((await response.json()) as Guest);
+  };
+
+  const saveIdentity = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!selected) return;
+    setError('');
+    const response = await apiFetch(`/api/v1/guests/${selected.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        idType: selected.idType,
+        idNumber: selected.idNumber,
+        nationality: selected.nationality,
+        address: selected.address,
+        city: selected.city,
+        country: selected.country,
+      }),
+    });
+    if (!response.ok) {
+      setError('Identity could not be saved');
+      return;
+    }
+    setSelected((await response.json()) as Guest);
   };
 
   return (
@@ -78,11 +116,32 @@ export function Guests() {
                 <td className="px-6 py-4 text-sm text-gray-900">{guest.firstName} {guest.lastName}</td>
                 <td className="px-6 py-4 text-sm text-gray-700">{guest.phone}</td>
                 <td className="px-6 py-4 text-sm text-gray-700">{guest.email}</td>
+                <td className="px-6 py-4 text-right text-sm">
+                  <button type="button" className="text-primary-600" onClick={() => void openGuest(guest)}>Identity</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {selected && (
+        <form onSubmit={(event) => void saveIdentity(event)} className="mt-6 grid gap-3 rounded-lg bg-white p-4 shadow md:grid-cols-2">
+          <h2 className="md:col-span-2 text-lg font-semibold text-gray-900">
+            Identity for {selected.firstName} {selected.lastName}
+          </h2>
+          <p className="md:col-span-2 text-sm text-gray-600">Check-in is refused until an identity type and number are saved.</p>
+          <input className="input" placeholder="ID type" value={selected.idType ?? ''} onChange={(event) => setSelected({ ...selected, idType: event.target.value })} />
+          <input className="input" placeholder="ID number" value={selected.idNumber ?? ''} onChange={(event) => setSelected({ ...selected, idNumber: event.target.value })} />
+          <input className="input" placeholder="Nationality" value={selected.nationality ?? ''} onChange={(event) => setSelected({ ...selected, nationality: event.target.value })} />
+          <input className="input" placeholder="City" value={selected.city ?? ''} onChange={(event) => setSelected({ ...selected, city: event.target.value })} />
+          <input className="input" placeholder="Country" value={selected.country ?? ''} onChange={(event) => setSelected({ ...selected, country: event.target.value })} />
+          <input className="input" placeholder="Address" value={selected.address ?? ''} onChange={(event) => setSelected({ ...selected, address: event.target.value })} />
+          <div className="md:col-span-2">
+            <button className="btn btn-primary" type="submit">Save identity</button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

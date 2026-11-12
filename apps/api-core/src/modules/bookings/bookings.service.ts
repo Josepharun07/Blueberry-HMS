@@ -12,6 +12,7 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { UserRole, RoleHierarchy } from '../../common/enums/user-role.enum';
 import { CustomLoggerService } from '../../common/logging/logger.service';
 import {
+  assertPaise,
   calendarDateInTimeZone,
   decimalToPaise,
   MoneyError,
@@ -20,6 +21,7 @@ import {
   paymentStatusFor,
   quoteStay,
   StayQuote,
+  subtractPaise,
 } from '../../common/money/money';
 import { Guest } from '../guests/entities/guest.entity';
 import { Room, RoomStatus } from '../rooms/entities/room.entity';
@@ -244,6 +246,11 @@ export class BookingsService {
         throw new BadRequestException('Check-in is only allowed during the booked stay');
       }
 
+      const guest = await manager.findOne(Guest, { where: { id: booking.guestId } });
+      if (!guest?.idType?.trim() || !guest.idNumber?.trim()) {
+        throw new BadRequestException('Record the guest identity document before check-in');
+      }
+
       const room = await manager.findOne(Room, {
         where: { id: booking.roomId },
         lock: { mode: 'pessimistic_write' },
@@ -320,6 +327,67 @@ export class BookingsService {
       this.logger.audit('BOOKING_NO_SHOW', actor.id, { bookingId: id });
       return saved;
     });
+  }
+
+  async invoice(id: string) {
+    const booking = await this.bookingRepository.findOne({
+      where: { id },
+      relations: { guest: true, room: true, payments: true },
+    });
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    const nights = booking.numberOfNights;
+    if (!Number.isSafeInteger(nights) || nights < 1 || nights > 366) {
+      throw new BadRequestException('Stay length is invalid');
+    }
+    let accommodationPaise: number;
+    let balance: number;
+    try {
+      const nightly = decimalToPaise(booking.roomRate);
+      accommodationPaise = nightly * nights;
+      assertPaise(accommodationPaise, 'accommodation');
+      balance = subtractPaise(decimalToPaise(booking.totalAmount), decimalToPaise(booking.paidAmount));
+    } catch (error) {
+      throw this.moneyError(error);
+    }
+    const payments = [...(booking.payments ?? [])].sort(
+      (left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+    );
+
+    return {
+      confirmationNumber: booking.confirmationNumber,
+      status: booking.status,
+      currency: 'INR' as const,
+      propertyLegalName: this.config.get<string>('PROPERTY_LEGAL_NAME') || null,
+      propertyGstin: this.config.get<string>('PROPERTY_GSTIN') || null,
+      taxBasisPoints: this.taxRate(),
+      guest: {
+        id: booking.guest?.id ?? booking.guestId,
+        firstName: booking.guest?.firstName ?? '',
+        lastName: booking.guest?.lastName ?? '',
+      },
+      roomNumber: booking.room?.roomNumber ?? '',
+      checkInDate: this.asCalendarDate(booking.checkInDate),
+      checkOutDate: this.asCalendarDate(booking.checkOutDate),
+      nights,
+      lines: [
+        { description: 'Accommodation', amount: paiseToRupeeString(accommodationPaise) },
+        { description: 'Discount', amount: booking.discountAmount },
+        { description: 'Tax', amount: booking.taxAmount },
+      ],
+      totalAmount: booking.totalAmount,
+      paidAmount: booking.paidAmount,
+      balanceAmount: paiseToRupeeString(balance),
+      payments: payments.map((payment) => ({
+        id: payment.id,
+        entryType: payment.entryType,
+        paymentMethod: payment.paymentMethod,
+        amount: payment.amount,
+        createdAt: payment.createdAt,
+      })),
+    };
   }
 
   recordPayment(bookingId: string, dto: CreatePaymentDto, idempotencyKey: string, actor: DeskActor): Promise<LedgerResult> {

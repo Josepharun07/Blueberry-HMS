@@ -23,6 +23,8 @@ export interface AppEnv {
   ALLOW_PUBLIC_REGISTER: boolean;
   COOKIE_SECURE: boolean;
   PROPERTY_TIMEZONE: string;
+  PROPERTY_LEGAL_NAME: string | null;
+  PROPERTY_GSTIN: string | null;
   JWT_EXPIRES_MS: number;
 }
 
@@ -102,6 +104,9 @@ export function validateEnv(config: Record<string, unknown>): AppEnv {
     throw new Error('PROPERTY_TIMEZONE must be a valid IANA time zone');
   }
 
+  const legalName = optionalText(config, 'PROPERTY_LEGAL_NAME', 200);
+  const gstin = optionalGstin(config);
+
   return {
     NODE_ENV: nodeEnv,
     DB_HOST: required(config, 'DB_HOST'),
@@ -118,8 +123,34 @@ export function validateEnv(config: Record<string, unknown>): AppEnv {
     ALLOW_PUBLIC_REGISTER: allowPublic === 'true',
     COOKIE_SECURE: nodeEnv === 'production',
     PROPERTY_TIMEZONE: timeZone,
+    PROPERTY_LEGAL_NAME: legalName,
+    PROPERTY_GSTIN: gstin,
     JWT_EXPIRES_MS: jwtExpiresMs,
   };
+}
+
+function optionalText(config: Record<string, unknown>, key: string, max: number): string | null {
+  const value = config[key];
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new Error(`${key} must be a string`);
+  }
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > max) {
+    throw new Error(`${key} must be at most ${max} characters`);
+  }
+  return trimmed;
+}
+
+function optionalGstin(config: Record<string, unknown>): string | null {
+  const value = optionalText(config, 'PROPERTY_GSTIN', 15);
+  if (!value) return null;
+  const gstin = value.toUpperCase();
+  if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)) {
+    throw new Error('PROPERTY_GSTIN must be a 15 character GSTIN');
+  }
+  return gstin;
 }
 
 export function parseDurationMs(value: string): number {

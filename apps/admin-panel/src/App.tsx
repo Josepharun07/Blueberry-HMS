@@ -6,6 +6,9 @@ import { Dashboard } from './pages/Dashboard';
 import { Bookings } from './pages/Bookings';
 import { Rooms } from './pages/Rooms';
 import { Guests } from './pages/Guests';
+import { Housekeeping } from './pages/Housekeeping';
+import { Staff } from './pages/Staff';
+import { PropertySettings } from './pages/PropertySettings';
 import { Layout } from './components/layout/Layout';
 import { useAuthStore } from './lib/store/authStore';
 import { apiFetch } from './lib/api/http';
@@ -68,6 +71,9 @@ export default function App() {
               <Route path="/bookings" element={<Bookings />} />
               <Route path="/rooms" element={<Rooms />} />
               <Route path="/guests" element={<Guests />} />
+              <Route path="/housekeeping" element={<Housekeeping />} />
+              <Route path="/staff" element={<Staff />} />
+              <Route path="/property" element={<PropertySettings />} />
             </Route>
           </Routes>
         </BrowserRouter>

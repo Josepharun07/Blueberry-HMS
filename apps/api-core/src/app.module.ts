@@ -15,6 +15,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { GuestsModule } from './modules/guests/guests.module';
 import { PropertyModule } from './modules/property/property.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 
 @Module({
@@ -38,6 +39,7 @@ import { RoomsModule } from './modules/rooms/rooms.module';
     BookingsModule,
     GuestsModule,
     RoomsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,6 +1,7 @@
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../lib/api/http';
 import { useAuthStore } from '../../lib/store/authStore';
+import { roleAtLeast } from '../../lib/roles';
 
 export function Layout() {
   const location = useLocation();
@@ -17,11 +18,14 @@ export function Layout() {
   };
 
   const navigation = [
-    { name: 'Dashboard', path: '/', icon: '📊' },
-    { name: 'Bookings', path: '/bookings', icon: '📅' },
-    { name: 'Rooms', path: '/rooms', icon: '🛏️' },
-    { name: 'Guests', path: '/guests', icon: '👥' },
-  ];
+    { name: 'Dashboard', path: '/', icon: '📊', show: true },
+    { name: 'Bookings', path: '/bookings', icon: '📅', show: roleAtLeast(user?.role, 'FRONT_DESK') },
+    { name: 'Rooms', path: '/rooms', icon: '🛏️', show: roleAtLeast(user?.role, 'HOUSEKEEPING') },
+    { name: 'Housekeeping', path: '/housekeeping', icon: '🧹', show: roleAtLeast(user?.role, 'HOUSEKEEPING') },
+    { name: 'Guests', path: '/guests', icon: '👥', show: roleAtLeast(user?.role, 'FRONT_DESK') },
+    { name: 'Staff', path: '/staff', icon: '🪪', show: roleAtLeast(user?.role, 'MANAGER') },
+    { name: 'Property', path: '/property', icon: '🏨', show: roleAtLeast(user?.role, 'OWNER') },
+  ].filter((item) => item.show);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -39,7 +43,7 @@ export function Layout() {
           </div>
           <div>
             <div className="font-bold text-gray-900">Blueberry HMS</div>
-            <div className="text-xs text-gray-500">Munnar</div>
+            <div className="text-xs text-gray-500">Front desk</div>
           </div>
         </div>
 

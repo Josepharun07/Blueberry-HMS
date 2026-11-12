@@ -2,8 +2,8 @@
 
 Front-desk system for one property. Staff sign in, find or add a guest, quote a specific room, confirm the stay, and record money received at the desk.
 
-**Status:** Front-desk ledger is running. Guest register, invoices, housekeeping board, and reports are not built yet.  
-**Last updated:** 9 November 2026 (Melbourne)
+**Status:** The desk can register a guest, quote and confirm a stay, record money received, print a bill, run housekeeping, and see the day's figures.  
+**Last updated:** 12 November 2026 (Sydney)
 
 The API is NestJS (`apps/api-core`, prefix `/api/v1`). The staff UI is React and Vite (`apps/admin-panel`). PostgreSQL is the store. Redis and Keycloak are present in Docker Compose and are not used by the API.
 
@@ -12,13 +12,15 @@ The API is NestJS (`apps/api-core`, prefix `/api/v1`). The staff UI is React and
 | Area | Status |
 | --- | --- |
 | Sign-in, roles, and staff accounts | Running on the API. The admin panel has sign-in and sign-out. |
-| Guests | Search and create on the API and in the admin panel. |
+| Guests | Search, create, and identity (document type, number, nationality, address). |
 | Rooms | Inventory, rack rate, and housekeeping status. Check-in and checkout own occupancy. |
 | Bookings | Server quote, create, schedule change, check-in, checkout, cancel, and no-show. |
 | Ledger | Append-only receipts and reversals. The desk records money received. |
-| Property settings | Owner-only API. No admin screen yet. |
-| Dashboard | Shell only. No occupancy or revenue figures. |
-| Guest register, GST invoice, reports | Not started. |
+| Bill | Server invoice for one stay. Legal name and GSTIN come from the environment. |
+| Housekeeping | Board grouped by room status. Occupied rooms leave only through checkout. |
+| Reports | Today's arrivals, departures, in-house count, occupancy, and money received. |
+| Property settings | Owner screen for name, phone, email, and city. |
+| Dashboard | The desk report. |
 
 ## Money
 
@@ -108,12 +110,16 @@ Browser calls send the session cookie. Mutations also send `x-csrf-token`. Amoun
 | `GET /auth/me` | Signed in | Returns the user and a fresh CSRF token. |
 | `POST /users` | Owner | Creates a staff account. |
 | `POST /guests` | Front desk | Creates a guest. |
-| `POST /guests/search` | Front desk | Body `{ "query": "..." }`, 2 to 80 characters. |
+| `POST /guests/search` | Front desk | Body `{ "query": "..." }`, 2 to 80 characters. Lists omit the document number. |
+| `GET /guests/:id` | Front desk | One guest, including the identity document. |
+| `PATCH /guests/:id` | Front desk | Updates identity and contact fields. |
 | `GET /rooms` | Housekeeping | Active rooms. |
 | `PATCH /rooms/:id/status` | Housekeeping | Manual status. `OCCUPIED` is refused. |
 | `POST /bookings/quote` | Front desk | Returns nights, nightly rate, tax, discount, and total. |
 | `POST /bookings` | Front desk | Creates a confirmed booking from the same fields as the quote. |
-| `POST /bookings/:id/check-in` | Front desk | Occupies the room when the property date is inside the stay. |
+| `POST /bookings/:id/check-in` | Front desk | Occupies the room when the property date is inside the stay and the guest has an identity document. |
+| `GET /bookings/:id/invoice` | Front desk | Stay bill from server amounts. Payment notes and references are omitted. |
+| `GET /reports/desk` | Front desk | Arrivals, departures, occupancy, and money received for the property date. |
 | `POST /bookings/:id/check-out` | Front desk | Refuses a balance. Sets the room to `CLEANING`. |
 | `POST /bookings/:id/payments` | Front desk | Header `Idempotency-Key` (UUID). Body `{ "amount": "1500.00", "paymentMethod": "CASH" }`. |
 | `POST /bookings/:id/payments/:paymentId/reversal` | Manager | Reverses that receipt in full. |
@@ -130,7 +136,7 @@ Stay overlap is `[check-in, check-out)`. The same room can turn over on the chec
 TypeORM writes `snake_case` columns.
 
 - `users` — email, password hash, name, role, status.
-- `guests` — name, email, phone, and optional address, city, country, id type, id number, and notes.
+- `guests` — name, email, phone, and optional address, city, country, nationality, id type, id number, and notes.
 - `rooms` — room number, floor, type (`STANDARD`, `DELUXE`, `SUITE`, `FAMILY`, `PRESIDENTIAL`), status (`AVAILABLE`, `OCCUPIED`, `CLEANING`, `MAINTENANCE`, `OUT_OF_ORDER`), rack rate as a decimal string, occupancy, and active flag.
 - `bookings` — guest, room, dates, nights, rate, tax, discount, total, paid amount, status (`PENDING`, `CONFIRMED`, `CHECKED_IN`, `CHECKED_OUT`, `CANCELLED`, `NO_SHOW`), payment status (`PENDING`, `PARTIAL`, `PAID`, `REFUNDED`), and confirmation number. Checks keep amounts at or above zero and paid amount at or under the total.
 - `payments` — booking, decimal amount, `amount_paise`, method, `RECEIPT` or `REVERSAL`, idempotency key, and the receipt a reversal corrects. Bookings cannot be deleted while a payment row points at them.
@@ -143,10 +149,13 @@ There is no `room_types` table, no amenities catalog, and no database audit tabl
 | Route | What it does |
 | --- | --- |
 | `/login` | Work email and password. No credential hint on the page. |
-| `/` | Dashboard shell. |
-| `/bookings` | List, details, check-in, checkout, cancel, record a receipt, and create a booking from a server quote. |
+| `/` | Today's arrivals, departures, occupancy, and money received. |
+| `/bookings` | List, details, bill, check-in, checkout, cancel, record a receipt, and create a booking from a server quote. |
 | `/rooms` | Grid, details, and status changes that leave occupancy to the booking. |
-| `/guests` | Search, and a form for first name, last name, email, and phone. |
+| `/housekeeping` | Rooms grouped by status. |
+| `/guests` | Search, create, and the identity fields required before check-in. |
+| `/staff` | Manager list. An owner creates accounts. |
+| `/property` | Owner edits the property name, phone, email, and city. |
 
 ## Commands
 
@@ -168,13 +177,8 @@ pnpm --filter @blueberry/api-core run migration:run
 pnpm --filter admin-panel run test
 ```
 
-Current unit tests: 6 API suites (27 tests) covering money, guests, rooms, and the app shell, plus 3 admin auth-store tests. There is no Postgres end-to-end suite yet.
+Current unit tests cover money, guests, rooms, the desk report, and the app shell, plus the admin auth store. There is no Postgres end-to-end suite yet. `1740000000001-GuestNationality` adds `guests.nationality`. On a fresh database, set `DB_SYNCHRONIZE=true` once in development, then turn it off.
 
 ## Next
 
-1. Guest register details the property must keep, including identity fields already on the guest row.
-2. GST folio and invoice, using the tax rate from the environment.
-3. Housekeeping board beyond the room status control.
-4. Desk reports for occupancy and money received.
-
-The website, point of sale, channel manager, and a content system stay later. The ledger will keep recording money received at the desk.
+The website, point of sale, channel manager, and a content system stay later. The ledger keeps recording money received at the desk. A printed GST invoice is the on-screen bill; it is not a filed tax return. Optional `PROPERTY_LEGAL_NAME` and `PROPERTY_GSTIN` are blank until the property sets them.

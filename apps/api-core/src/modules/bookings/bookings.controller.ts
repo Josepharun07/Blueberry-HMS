@@ -106,6 +106,11 @@ export class BookingsController {
     return this.bookingsService.reversePayment(id, paymentId, dto.reason, idempotencyKey, this.actor(req));
   }
 
+  @Get(':id/invoice')
+  invoice(@Param('id') id: string) {
+    return this.bookingsService.invoice(id);
+  }
+
   @Get(':id/payments')
   getPayments(@Param('id') id: string) {
     return this.bookingsService.getPayments(id);

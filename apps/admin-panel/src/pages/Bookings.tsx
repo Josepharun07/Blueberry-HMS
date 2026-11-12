@@ -5,6 +5,7 @@ import type { Booking } from '../types/booking.types';
 import { bookingActions } from '../lib/api/bookings';
 import { BookingDetailsModal } from '../components/bookings/BookingDetailsModal';
 import { PaymentModal } from '../components/bookings/PaymentModal';
+import { InvoiceModal } from '../components/bookings/InvoiceModal';
 import { CreateBookingModal } from '../components/bookings/CreateBookingModal';
 
 export function Bookings() {
@@ -14,6 +15,7 @@ export function Bookings() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [invoiceBookingId, setInvoiceBookingId] = useState<string | null>(null);
 
   const { data: bookings, isLoading, error } = useQuery({
     queryKey: ['bookings'],
@@ -226,6 +228,12 @@ export function Bookings() {
                       >
                         View
                       </button>
+                      <button
+                        onClick={() => setInvoiceBookingId(booking.id)}
+                        className="text-primary-600 hover:text-primary-900"
+                      >
+                        Bill
+                      </button>
                       {booking.paymentStatus !== 'PAID' && booking.status !== 'CANCELLED' && (
                         <button 
                           onClick={() => handleRecordPayment(booking)}
@@ -288,6 +296,12 @@ export function Bookings() {
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreated={() => queryClient.invalidateQueries({ queryKey: ['bookings'] })}
+      />
+
+      <InvoiceModal
+        bookingId={invoiceBookingId}
+        isOpen={invoiceBookingId !== null}
+        onClose={() => setInvoiceBookingId(null)}
       />
 
       <PaymentModal
